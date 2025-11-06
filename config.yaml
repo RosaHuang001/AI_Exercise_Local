@@ -1,0 +1,69 @@
+# =========================================================
+# AI_Exercise_Local 系統設定檔 (v3, 完整可執行)
+# YOLOv11 Pose + MMAction2 PoseC3D + GPT + SQL
+# =========================================================
+
+api:
+  openai:
+    api_key: "YOUR_OPENAI_KEY"   # ← 請填入你的 API Key
+    model: "gpt-4o-mini"
+    max_tokens: 800
+    temperature: 0.7
+
+paths:
+  logs_dir: logs                # 系統日誌輸出資料夾
+  results_dir: results          # 統一輸出目錄（含 pose_json / pose_videos / advice）
+  pose_json_dir: results/pose_json  # YOLOv11 Pose JSON 輸出路徑
+
+system:
+  log_level: INFO               # 日誌等級
+  max_video_duration: 30        # 每段影片最長處理秒數
+  frame_skip: 2                 # 每隔幾幀取樣（越小越精細）
+  show_window: false            # 是否顯示視窗畫面（GPU 模式可關）
+
+# =========================================================
+# 模型設定
+# =========================================================
+models:
+  yolov11_pose:
+    model_path: "yolov11n-pose.pt"   # YOLOv11 Pose 模型權重
+    device: cuda                     # 僅支援 GPU 模式
+    conf: 0.5                        # 信心閾值
+    iou: 0.45                        # IoU 閾值
+    max_det: 5                       # 每幀最大偵測人數
+
+  posec3d:
+    config_file: "configs/posec3d_fingym_config.py"   # finGYM 設定檔
+    checkpoint_file: "checkpoints/posec3d_fingym.pth" # finGYM 權重
+    device: cuda
+    label_map:
+      "0": squat
+      "1": push_up
+      "2": plank
+      "3": bridge
+      "4": russian_twist
+
+# =========================================================
+# 中文 → 英文標籤對照表 (供 GPT / SQL / 影片命名一致)
+# =========================================================
+labels:
+  map:
+    仰臥踢腿: leg_raise
+    俯撐抬腿: plank_leg_lift
+    俄羅斯轉體: russian_twist
+    平板支撐: plank
+    鳥狗式: bird_dog
+    橋式: bridge
+    深蹲: squat
+    伏地挺身: push_up
+
+# =========================================================
+# MySQL 連線設定（自動由 .env 載入）
+# =========================================================
+database:
+  mysql:
+    host: "${DB_HOST:-localhost}"
+    port: ${DB_PORT:-3306}
+    user: "${DB_USER:-root}"
+    password: "${DB_PASS:-}"
+    database: "${DB_NAME:-ai_exercise}"
