@@ -1,52 +1,64 @@
-<mxfile host="65bd71144e">
-    <diagram id="research_flow_diagram" name="Research Flow">
-        <mxGraphModel dx="1193" dy="839" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1080" pageHeight="1620" math="0" shadow="0">
-            <root>
-                <mxCell id="0"/>
-                <mxCell id="1" parent="0"/>
-                <mxCell id="title_box" value="受試者招募&#10;(台北市某醫學中心心臟內科門診)" style="rounded=0;fillColor=none;strokeColor=#333333;strokeWidth=2;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="140" y="20" width="800" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="title_box" target="enrollment_and_exclusion">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="enrollment_and_exclusion" value="" style="rounded=1;arcSize=10;fillColor=none;strokeColor=none;strokeWidth=0;" vertex="1" parent="1">
-                    <mxGeometry x="60" y="130" width="960" height="200" as="geometry"/>
-                </mxCell>
-                <mxCell id="enrollment_box" value="納入標準&#10;&#10;(1) 年滿20歲&#10;(2) 慢性心衰竭，病情穩定&#10;(3) NYHA II-III級&#10;(4) 可參與中等強度運動&#10;(5) 能操作智慧裝置&#10;(6) 簽署知情同意書" style="rounded=1;arcSize=8;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2.5;fontSize=11;align=left;verticalAlign=top;padding=8px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="70" y="140" width="400" height="180" as="geometry"/>
-                </mxCell>
-                <mxCell id="exclusion_box" value="排除標準&#10;&#10;(1) 絕對禁忌症&#10;(2) NYHA I或IV級&#10;(3) 近3個月急性事件&#10;(4) 近3個月手術/裝置治療&#10;(5) 嚴重併發症&#10;(6) 認知/精神障礙&#10;(7) 懷孕或哺乳&#10;(8) 參與其他研究" style="rounded=1;arcSize=8;fillColor=#FCE4EC;strokeColor=#E91E63;strokeWidth=2.5;fontSize=11;align=left;verticalAlign=top;padding=8px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="550" y="140" width="400" height="180" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="enrollment_box" target="baseline_box">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow2b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="exclusion_box" target="baseline_box">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="baseline_box" value="第1階段：基線測量&#10;(MLHFQ、NYHA分級、人口學特徵、疾病史記錄)" style="rounded=1;arcSize=8;fillColor=#F0F4FF;strokeColor=#2196F3;strokeWidth=2.5;fontSize=12;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="140" y="370" width="800" height="90" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="baseline_box" target="system_interaction_box">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="system_interaction_box" value="第2階段：介入期(共4週)&#10;(受試者自主運動訓練 + 日記或系統記錄 + 避免其他運動介入)" style="rounded=1;arcSize=8;fillColor=#F9F5FF;strokeColor=#9C27B0;strokeWidth=2.5;fontSize=12;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="140" y="500" width="800" height="90" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="system_interaction_box" target="home_use_box">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="home_use_box" value="第3階段：追蹤與安全監控&#10;(運動依從性追蹤、安全監控、不良事件記錄)" style="rounded=1;arcSize=8;fillColor=#E8F5E9;strokeColor=#4CAF50;strokeWidth=2.5;fontSize=12;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="140" y="630" width="800" height="90" as="geometry"/>
-                </mxCell>
-                <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2.5;endArrow=classic;" edge="1" parent="1" source="home_use_box" target="assessment_box">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="assessment_box" value="第4階段：使用者回饋蒐集&#10;(運動執行情形、MLHFQ/SUS/Health-ITUES問卷、臨床再評估)" style="rounded=1;arcSize=8;fillColor=#C8E6C9;strokeColor=#388E3C;strokeWidth=2.5;fontSize=12;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" vertex="1" parent="1">
-                    <mxGeometry x="140" y="760" width="800" height="90" as="geometry"/>
-                </mxCell>
-            </root>
-        </mxGraphModel>
-    </diagram>
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="28.2.9">
+  <diagram id="research_flow_diagram" name="Research Flow">
+    <mxGraphModel dx="957" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1080" pageHeight="1620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="g-GYUJr1VspoQDU0fEtE-5" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;strokeWidth=2;" parent="1" source="title_box" target="enrollment_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="title_box" value="受試者招募 N = 30&#xa;(台北市某醫學中心心臟內科門診)" style="rounded=1;strokeWidth=2.5;align=center;verticalAlign=middle;fontSize=14;fontFamily=Microsoft YaHei;fontStyle=0;fillColor=#F0F4FF;strokeColor=#2196F3;arcSize=8;fontColor=default;" parent="1" vertex="1">
+          <mxGeometry x="355" y="12" width="370" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="enrollment_and_exclusion" value="" style="rounded=1;arcSize=10;fillColor=none;strokeColor=none;strokeWidth=0;" parent="1" vertex="1">
+          <mxGeometry x="60" y="130" width="960" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="g-GYUJr1VspoQDU0fEtE-4" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;startSize=12;endSize=11;endArrow=none;endFill=0;targetPerimeterSpacing=7;strokeWidth=2;" parent="1" source="enrollment_box" target="exclusion_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g-GYUJr1VspoQDU0fEtE-8" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;strokeWidth=2;" parent="1" source="enrollment_box" target="g-GYUJr1VspoQDU0fEtE-6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="enrollment_box" value="納入標準&#xa;&#xa;(1) 年滿20歲&#xa;(2) 慢性心衰竭，病情穩定&#xa;(3) NYHA II-III級&#xa;(4) 可參與中等強度運動&#xa;(5) 能操作智慧裝置&#xa;(6) 簽署知情同意書" style="rounded=1;arcSize=8;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2.5;fontSize=14;align=left;verticalAlign=top;padding=8px;fontFamily=Microsoft YaHei;" parent="1" vertex="1">
+          <mxGeometry x="230" y="157" width="270" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="exclusion_box" value="排除標準&#xa;&#xa;(1) 絕對禁忌症&#xa;(2) NYHA I或IV級&#xa;(3) 近3個月急性事件&#xa;(4) 近3個月手術/裝置治療&#xa;(5) 嚴重併發症&#xa;(6) 認知/精神障礙&#xa;(7) 懷孕或哺乳&#xa;(8) 參與其他研究" style="rounded=1;arcSize=8;fillColor=#FCE4EC;strokeColor=#E91E63;strokeWidth=2.5;fontSize=14;align=left;verticalAlign=top;padding=8px;fontFamily=Microsoft YaHei;" parent="1" vertex="1">
+          <mxGeometry x="580" y="157" width="260" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="baseline_box" value="第1階段：基線期（介入前）&#xa;(NYHA分級、人口學特徵、疾病史記錄、生理指標測量)" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2.5;fontSize=14;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" parent="1" vertex="1">
+          <mxGeometry x="575" y="412" width="440" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;fontSize=14;" parent="1" source="baseline_box" target="system_interaction_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="system_interaction_box" value="第2階段：平行介入期(共4週)&#xa;(受試者自主運動訓練 + 日記或系統記錄 + 避免其他運動介入)" style="rounded=1;arcSize=8;fillColor=#F9F5FF;strokeColor=#9C27B0;strokeWidth=2.5;fontSize=14;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;fontColor=default;" parent="1" vertex="1">
+          <mxGeometry x="570" y="542" width="450" height="88" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;fontSize=14;" parent="1" source="system_interaction_box" target="home_use_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="home_use_box" value="第3階段：追蹤與安全監控&#xa;(運動依從性追蹤、安全監控、不良事件記錄，&#xa;臨床專家審查 AI 推薦運動內容之安全性)" style="rounded=1;arcSize=8;fillColor=#F9F5FF;strokeColor=#9C27B0;strokeWidth=2.5;fontSize=14;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;fontColor=default;" parent="1" vertex="1">
+          <mxGeometry x="570" y="678" width="450" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;fontSize=14;" parent="1" source="home_use_box" target="assessment_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="assessment_box" value="第4階段：使用者回饋蒐集&#xa;(運動執行情形、MLHFQ/SUS量表、臨床再評估)" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2.5;fontSize=14;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" parent="1" vertex="1">
+          <mxGeometry x="570" y="821" width="450" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="g-GYUJr1VspoQDU0fEtE-9" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;strokeWidth=2;" parent="1" source="g-GYUJr1VspoQDU0fEtE-6" target="baseline_box" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g-GYUJr1VspoQDU0fEtE-6" value="隨機分派&#xa;介入組 n = 15 (AI 系統介入)&#xa;對照組 n = 15 (臨床運動處方)" style="rounded=1;arcSize=8;fillColor=#F0F4FF;strokeColor=#2196F3;strokeWidth=2.5;fontSize=14;align=center;verticalAlign=middle;padding=10px;fontFamily=Microsoft YaHei;" parent="1" vertex="1">
+          <mxGeometry x="230" y="412" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="qU4tOafVXnlw5oi-_pja-1" value="&lt;font style=&quot;color: rgb(255, 58, 13); font-size: 14px;&quot;&gt;前測&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="570" y="374" width="60" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="qU4tOafVXnlw5oi-_pja-2" value="&lt;span style=&quot;color: rgb(255, 58, 13); font-family: Helvetica; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;後測&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="790" width="60" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
