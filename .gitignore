@@ -48,6 +48,7 @@ Thumbs.db
 # 專案特定
 logs/
 cache/
+results/
 *.log
 *.pkl
 
@@ -57,8 +58,10 @@ cache/
 *.onnx
 
 # 影片檔案
-videos/*.mp4
-videos/*.avi
-videos/*.mov
-videos/*.mkv
-videos/*.wmv
+videos/
+exercise_videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv

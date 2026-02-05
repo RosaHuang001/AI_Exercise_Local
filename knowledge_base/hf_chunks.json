@@ -1,0 +1,203 @@
+[
+  { "_comment": "=== 心臟衰竭背景與運動相關生理限制 ===" },
+
+  {
+    "id": "HF_BG_01",
+    "population": "Heart Failure",
+    "topic": "Background_Definition",
+    "condition": {},
+    "rule": "Heart failure is characterized by impaired ventricular filling or ejection, resulting in reduced ability to meet metabolic demands during physical activity.",
+    "rule_level": "CONTEXT",
+    "priority": 20
+  },
+
+  {
+    "id": "HF_BG_02",
+    "population": "Heart Failure",
+    "topic": "Background_Epidemiology",
+    "condition": { "age_group": ["55_64", "65_74", "75_plus"] },
+    "rule": "Heart failure is a leading cause of hospitalization and readmission among older adults.",
+    "rule_level": "CONTEXT",
+    "priority": 15
+  },
+
+  {
+    "id": "HF_BG_03",
+    "population": "Heart Failure",
+    "topic": "Background_Classification",
+    "condition": {},
+    "rule": "Heart failure may be classified as reduced ejection fraction or preserved ejection fraction, with both types demonstrating exercise intolerance.",
+    "rule_level": "CONTEXT",
+    "priority": 20
+  },
+
+  {
+    "id": "HF_BG_04",
+    "population": "Heart Failure",
+    "topic": "Background_Functional_Limitation",
+    "condition": { "nyha": ["III", "IV"] },
+    "rule": "Exercise intolerance in Heart Failure is influenced by both central cardiac limitations and peripheral factors.",
+    "rule_level": "CONTEXT",
+    "priority": 25
+  },
+
+  {
+    "id": "HF_BG_05",
+    "population": "Heart Failure",
+    "topic": "Background_Peripheral_Limitation",
+    "condition": { "risk_level": ["moderate", "high"] },
+    "rule": "Peripheral factors contributing to reduced exercise tolerance include impaired skeletal muscle metabolism, reduced blood flow, and abnormal ventilatory responses.",
+    "rule_level": "CONTEXT",
+    "priority": 25
+  },
+
+  {
+    "id": "HF_BG_06",
+    "population": "Heart Failure",
+    "topic": "Background_Exercise_Capacity",
+    "condition": { "nyha": ["II", "III", "IV"] },
+    "rule": "Peak oxygen uptake during exercise is commonly reduced by approximately 30 to 40 percent in individuals with Heart Failure.",
+    "rule_level": "CONTEXT",
+    "priority": 30
+  },
+
+  { "_comment": "=== 運動測試與處方前提 ===" },
+
+  {
+    "id": "HF_ET_01",
+    "population": "Heart Failure",
+    "topic": "Exercise_Testing_Safety",
+    "condition": { "risk_level": ["low", "moderate"] },
+    "rule": "Symptom-limited exercise testing is considered safe for individuals with stable Heart Failure when appropriately supervised.",
+    "rule_level": "GUIDELINE",
+    "priority": 80
+  },
+
+  {
+    "id": "HF_ET_02",
+    "population": "Heart Failure",
+    "topic": "Exercise_Testing_Purpose",
+    "condition": {},
+    "rule": "Exercise testing is used to evaluate functional capacity, symptom response, and exercise tolerance in Heart Failure patients.",
+    "rule_level": "CONTEXT",
+    "priority": 40
+  },
+
+  {
+    "id": "HF_ET_03",
+    "population": "Heart Failure",
+    "topic": "Exercise_Testing_Protocol",
+    "condition": { "risk_level": ["moderate", "high"] },
+    "rule": "Low-level exercise testing protocols are recommended for individuals with Heart Failure to minimize risk and allow gradual workload progression.",
+    "rule_level": "GUIDELINE",
+    "priority": 75
+  },
+
+  {
+    "id": "HF_ET_04",
+    "population": "Heart Failure",
+    "topic": "Exercise_Testing_Limitation",
+    "condition": { "medication_hr_blunted": true },
+    "rule": "Heart rate response during exercise may be blunted or unreliable in Heart Failure patients, particularly those using beta-blockers.",
+    "rule_level": "GUIDELINE",
+    "priority": 70
+  },
+
+  {
+    "id": "HF_ET_05",
+    "population": "Heart Failure",
+    "topic": "Exercise_Testing_Interpretation",
+    "condition": { "risk_level": ["moderate", "high"] },
+    "rule": "Perceived exertion and symptom monitoring are essential indicators for guiding exercise intensity when heart rate is not reliable.",
+    "rule_level": "GUIDELINE",
+    "priority": 75
+  },
+
+  { "_comment": "=== 運動強度監測 ===" },
+
+  {
+    "id": "HF_P3_MON_01",
+    "population": "Heart Failure",
+    "topic": "Monitoring_RPE",
+    "condition": { "risk_level": ["moderate", "high"] },
+    "rule": "Ratings of perceived exertion should be used as a primary method to guide exercise intensity in Heart Failure patients.",
+    "rule_level": "GUIDELINE",
+    "priority": 75
+  },
+
+  {
+    "id": "HF_P3_MON_02",
+    "population": "Heart Failure",
+    "topic": "Monitoring_Symptoms",
+    "condition": { "risk_level": ["high"] },
+    "rule": "Exercise intensity should be adjusted based on symptoms such as dyspnea, fatigue, and dizziness.",
+    "rule_level": "HARD",
+    "priority": 90
+  },
+
+  { "_comment": "=== 心臟輔助裝置（LVAD） ===" },
+
+  {
+    "id": "HF_P3_LVAD_01",
+    "population": "Heart Failure",
+    "topic": "LVAD_Exercise_Safety",
+    "condition": { "has_lvad": true },
+    "rule": "Patients with a left ventricular assist device may participate in exercise training when medically stable.",
+    "rule_level": "GUIDELINE",
+    "priority": 80
+  },
+
+  {
+    "id": "HF_P3_LVAD_02",
+    "population": "Heart Failure",
+    "topic": "LVAD_Monitoring",
+    "condition": { "has_lvad": true },
+    "rule": "Blood pressure and symptoms should be carefully monitored during exercise in patients with a left ventricular assist device.",
+    "rule_level": "HARD",
+    "priority": 95
+  },
+
+  { "_comment": "=== 心律不整與終止條件 ===" },
+
+  {
+    "id": "HF_P3_ARR_01",
+    "population": "Heart Failure",
+    "topic": "Arrhythmia_Risk",
+    "condition": { "risk_level": ["moderate", "high"] },
+    "rule": "Heart failure patients may be at increased risk of exercise-induced arrhythmias.",
+    "rule_level": "HARD",
+    "priority": 95
+  },
+
+  {
+    "id": "HF_P3_WARN_01",
+    "population": "Heart Failure",
+    "topic": "Exercise_Termination",
+    "condition": { "risk_level": ["high"] },
+    "rule": "Exercise should be terminated if abnormal symptoms or signs such as chest pain, severe dyspnea, or lightheadedness occur.",
+    "rule_level": "HARD",
+    "priority": 100
+  },
+
+  { "_comment": "=== 個別化與臨床判斷 ===" },
+
+  {
+    "id": "HF_P3_IND_01",
+    "population": "Heart Failure",
+    "topic": "Individualization",
+    "condition": {},
+    "rule": "Exercise prescription for Heart Failure patients must be individualized based on clinical status, comorbidities, and functional capacity.",
+    "rule_level": "GUIDELINE",
+    "priority": 85
+  },
+
+  {
+    "id": "HF_P3_IND_02",
+    "population": "Heart Failure",
+    "topic": "Clinical_Judgment",
+    "condition": {},
+    "rule": "Clinical judgment should always override automated or generalized exercise recommendations for Heart Failure patients.",
+    "rule_level": "HARD",
+    "priority": 100
+  }
+]

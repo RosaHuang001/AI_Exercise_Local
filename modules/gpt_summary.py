@@ -5,6 +5,8 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from rag.rag_engine import ACSMRagEngine
+from rag.rule_controller import RuleController
 
 
 # ==================== OpenAI 設定 ====================
@@ -14,6 +16,19 @@ OPENAI_API_KEY = (os.getenv("OPENAI_API_KEY") or "").strip()
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 OPENAI_MODEL = "gpt-4o"
+
+
+# ==================== RAG 設定 ====================
+
+RAG_ENGINE = ACSMRagEngine(
+    knowledge_path="knowledge_base/hf_chunks.json"
+)
+
+RULE_CONTROLLER = RuleController(
+    max_rules=4,
+    debug=False
+)
+
 
 
 
@@ -108,7 +123,14 @@ def build_impact_paragraph(stats: dict) -> str:
 
 # ==================== GPT 文案（Demo 用後處理說明） ====================
 
-def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_level: str) -> dict:
+def call_openai_label(
+    file_name: str,
+    duration_s: float,
+    stats: dict,
+    activity_level: str,
+    user_condition: dict,
+    risk_assessment: dict
+) -> dict:
     """
     【Demo 用：GPT 白話說明模組】
     - 產出「可交付品質」綜合摘要（必備）
@@ -162,6 +184,72 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
         region_hint = "全身或混合動作"
 
 
+
+    # ==================== STEP 2 : RAG 規則檢索 ====================
+
+    user_profile = {
+        "risk_level": risk_assessment.get("risk_level", "moderate"),
+        "nyha": user_condition.get("nyha"),             # I / II / III / IV（與 rule_controller 一致）
+        "is_stable": user_condition.get("hf_stable"),
+        "posture": stats.get("posture"),
+        "weight_bearing": stats.get("weight_bearing")
+    }
+
+
+
+
+
+
+    
+    
+    
+    rag_condition = {
+        "region": primary_region if primary_region != "Unknown" else None,
+        "posture": posture if posture != "Unknown" else None,
+        "weight_bearing": stats.get("weight_bearing") if "weight_bearing" in stats else None
+    }
+
+
+
+    hf_rules_raw = RAG_ENGINE.retrieve_rules(
+    population="Heart Failure",
+    condition=rag_condition,
+    topics=[
+        "Exercise Intensity",
+        "Joint Impact",
+        "Safety",
+        "FITT",
+        "Individualization"
+    ]
+    )
+
+
+
+    hf_rules = RULE_CONTROLLER.process(
+        rules=hf_rules_raw,
+        user_profile=user_profile
+    )
+
+
+
+    rag_text = "\n".join(
+    f"- {r.get('rule', '')} ({r.get('source', r.get('id', 'ACSM guideline'))})"
+    for r in hf_rules
+    )  if hf_rules else ""
+
+
+
+
+    if hf_rules:
+        print(f"[RAG] Retrieved {len(hf_rules)} ACSM rules")
+
+    else:
+        print(f"[INFO] No ACSM rules found")
+
+
+
+
+
     system_prompt = """
 你是一位「復健專業人員」，正在向病患說明一支『運動示範影片』，
 協助病患了解這支影片適合怎樣的運動強度，以及回家照著做時可以怎麼安排。
@@ -199,6 +287,20 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
     - 不要提「牛頓」的物理定義與公式，不要講重力加速度，不要做任何計算步驟。
     - 不要用專業術語；若提到 N，只要說「換算成力量大小」即可。
 """
+
+
+
+    if rag_text:
+        system_prompt += f"""
+
+【ACSM 指引補充（RAG 檢索，僅限參考）】
+以下內容已依據本次運動情境，自 ACSM 指引中自動篩選。
+你在撰寫說明時，只能在下列規則範圍內進行白話轉譯，
+不得新增、推翻或延伸未提及的運動建議：
+
+{rag_text}
+"""
+
 
 
     user_prompt = f"""
@@ -245,10 +347,26 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
 - {motion_type_hint}
 
 
+【使用者個人狀況（請務必納入解讀）】
+- 族群：{user_condition["population"]}
+- 心臟功能分級（NYHA）：{user_condition.get("nyha")}
+- 疾病穩定狀態：{user_condition.get("hf_stable")}
+- 是否有心臟手術史：{user_condition.get("cardiac_surgery")}
+- 系統整體風險評估：{risk_assessment["risk_level"]}
+
+說明要求：
+- 請在摘要中明確說明「對這位使用者而言」
+- 評估目前影片的動作頻率與次數，是否對該使用者來說偏快、適中或需保守調整
+- 若需調整，請以「可考慮從…開始」、「可適度降低…」描述
+- 不可新增任何數值，只能調整『建議做法的保守程度』
+
+
+
 請輸出以下 JSON（只輸出 JSON）：
 
 {{
-  "gpt_summary": "必填。請以『專業復健人員向病患介紹一支運動示範影片』的方式，撰寫一段病患友善的白話摘要（約 5–7 句）。請說明影片示範的是什麼運動、主要會用到哪個身體部位與關節，並將動作的次數、節奏與幅度轉譯成病患能理解的描述（避免只列數字）。請**明確標示這是一支低 / 中 / 高強度的運動示範影片**，並依 ACSM FITT 原則，以保守、安全的方式，提供病患照著影片進行時可參考的組數、次數或時間建議。最後加入 1–2 句安全提醒，摘要中關於「關節衝擊力」必須用民眾聽得懂的說法解釋「倍體重」與「體重區間換算」的意義（不講公式、不做計算）。幫助病患知道什麼情況下應放慢或停止。請勿使用列點。",
+  "gpt_summary": "必填。請以『專業復健人員向病患介紹一支運動示範影片』的方式，撰寫一段病患友善的白話摘要（約 5–7 句）。請說明影片示範的是什麼運動、主要會用到哪個身體部位與關節，並將動作的次數、節奏與幅度轉譯成病患能理解的描述（避免只列數字）。請**明確標示這是一支低 / 中 / 高強度的運動示範影片**，並依 ACSM FITT 原則，以保守、安全的方式，提供病患照著影片進行時可參考的組數、次數或時間建議。最後加入 1–2 句安全提醒，摘要中關於「關節衝擊力」必須用民眾聽得懂的說法解釋「倍體重」與「體重區間換算」的意義（不講公式、不做計算）。幫助病患知道什麼情況下應放慢或停止。請勿使用列點。你在說明時，必須同時站在「這支影片的動作特性」與「該使用者的身體與風險狀況」兩個角度進行解讀。
+",
   "gpt_activity_level": "低 / 中 / 高（三選一）",
   "gpt_risk_notice": "一句話風險提醒（務必具體、可理解）",
   "gpt_safety_tip": "一句話安全建議（務必可操作）",
@@ -292,4 +410,96 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
 
     except Exception as e:
         print(f"[WARN] GPT 產生失敗，使用 fallback：{e}")
+        return fallback
+
+
+# ==================== 一週 7 日個人化運動計畫 ====================
+
+def generate_weekly_plan(
+    user_condition: dict,
+    risk_assessment: dict,
+    results: list,
+) -> dict:
+    """
+    依使用者條件與各影片分析結果，產出「使用者個人化一週 7 日運動計畫」。
+    回傳：{"plan_text": 完整計畫文字, "plan_intro": 簡短說明（可選）, "days": {1..7: 當日內容}}
+    """
+    fallback = {
+        "plan_text": "（本週計畫需依個人狀況調整，建議與醫療人員討論後執行。本次因故無法自動產出，請稍後再試或手動安排。）",
+        "plan_intro": "",
+        "days": {},
+    }
+
+    if openai_client is None:
+        return fallback
+
+    # 使用者狀況摘要
+    user_desc = (
+        f"族群：{user_condition.get('population', '—')}；"
+        f"心臟功能分級（NYHA）：{user_condition.get('nyha', '—')}；"
+        f"風險等級：{risk_assessment.get('risk_level', '—')}；"
+        f"是否建議運動：{risk_assessment.get('allow_exercise', True)}。"
+    )
+    if risk_assessment.get("note"):
+        user_desc += f" 備註：{risk_assessment['note']}"
+
+    # 各影片分析摘要（供 GPT 判斷適合度與安排）
+    exercises_desc = []
+    for i, res in enumerate(results, 1):
+        video_name = res.get("video", "")
+        name_zh = os.path.splitext(os.path.basename(video_name))[0] if video_name else f"影片{i}"
+        decision = res.get("decision", "RECOMMEND")
+        gpt = res.get("gpt_summary", {}) if isinstance(res.get("gpt_summary"), dict) else {}
+        summary = gpt.get("gpt_summary", "") if isinstance(gpt, dict) else ""
+        risk_notice = gpt.get("gpt_risk_notice", "") if isinstance(gpt, dict) else ""
+        safety_tip = gpt.get("gpt_safety_tip", "") if isinstance(gpt, dict) else ""
+        yolo = res.get("yolo_result", {})
+        intensity = yolo.get("activity_level") or (yolo.get("impact", {}) or {}).get("level") or "—"
+        exercises_desc.append(
+            f"【{name_zh}】系統建議：{decision}；強度：{intensity}。"
+            f"摘要：{summary[:200]}{'…' if len(str(summary)) > 200 else ''}。"
+            f"風險提醒：{risk_notice}。安全建議：{safety_tip}。"
+        )
+
+    exercises_block = "\n\n".join(exercises_desc)
+
+    system_prompt = """你是一位復健／運動指導專業人員，正在為一位使用者制定「個人化一週 7 日運動計畫」。
+你的任務是：
+1. 依據「使用者狀況」與「各支影片的分析結果與建議」，決定一週內每天適合做哪些動作、做多久、幾組，以及哪天休息。
+2. 計畫必須符合該使用者的風險等級與心臟功能分級，保守、可執行，且明確寫出「週一」到「週日」的內容。
+3. 只使用上述分析過的影片／動作，不要發明未提供的運動。
+4. 若同一動作有「左側」「右側」兩支影片（檔名會標示左側、右側），請在計畫中寫明「該動作左、右各一組」或「先做左側一組，再做右側一組」等說法，讓使用者知道要雙側都做。
+5. 輸出格式：先一段簡短「本週計畫說明」（2–3 句），接著依序「週一：…」「週二：…」…「週日：…」，每 day 內寫清楚：做哪個動作、建議時間或組數、注意事項（若有）。
+6. 語氣友善、具體、可操作，避免專業術語。不要輸出 JSON，只輸出純文字計畫。"""
+
+    user_prompt = f"""
+【使用者狀況】
+{user_desc}
+
+【已分析之運動影片與建議】
+{exercises_block}
+
+請根據以上資訊，產出「使用者個人化一週 7 日運動計畫」（週一至週日，含休息日與每日建議動作／時間／注意事項）。只輸出計畫內容，不要前言或結尾多餘說明。
+"""
+
+    try:
+        response = openai_client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt.strip()},
+                {"role": "user", "content": user_prompt.strip()},
+            ],
+            temperature=0.4,
+            timeout=45,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        if not content:
+            return fallback
+        return {
+            "plan_text": content,
+            "plan_intro": "",
+            "days": {},
+        }
+    except Exception as e:
+        print(f"[WARN] 一週計畫產生失敗：{e}")
         return fallback

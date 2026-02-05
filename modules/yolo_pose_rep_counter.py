@@ -24,7 +24,7 @@ import cv2
 import torch
 from ultralytics import YOLO
 from ultralytics.utils import LOGGER
-from gpt_summary import call_openai_label
+from modules.gpt_summary import call_openai_label
 
 
 
@@ -650,6 +650,7 @@ def main():
         path = os.path.join(VIDEO_BASE_DIR, f)
 
         out_video, stats, duration_s = yolo_process_one_video(model, path, OUTPUT_VIDEO_DIR)
+        yolo_result = pack_yolo_result(out_video, stats, duration_s)
         activity_level = classify_activity_level(stats)
 
 
@@ -703,6 +704,46 @@ def main():
             writer.writerow({k: format_value(r.get(k)) for k in rows[0].keys()})
 
     print(f">>> 全部完成，CSV 已輸出：{OUTPUT_CSV_PATH}")
+
+
+
+
+def pack_yolo_result(out_path, stats, duration_s):
+    """
+    封裝給主系統 / RAG / 規則 / GPT 用的 YOLO 回傳格式
+    """
+    return {
+        # --- 影片層級 ---
+        "video_output": out_path,
+        "duration_s": duration_s,
+
+        # --- 高階語意（系統判斷主力）---
+        "posture": stats.get("posture"),
+        "primary_region": stats.get("primary_region"),
+        "primary_joint": stats.get("primary_joint"),
+        "primary_side": stats.get("primary_side"),
+        "activity_level": classify_activity_level(stats),
+
+        # --- 主關節運動學（避免用全關節雜訊）---
+        "primary_kinematics": {
+            "rom_p5_p95": stats.get("rom_p5_p95"),
+            "frequency_hz": stats.get("frequency_hz"),
+            "reps": stats.get("reps"),
+            "intensity_mean": stats.get("intensity_mean"),
+            "intensity_p95": stats.get("intensity_p95"),
+            "intensity_energy": stats.get("intensity_energy"),
+        },
+
+        # --- 醫療安全 ---
+        "impact": {
+            "level": stats.get("impact_level"),
+            "bw_low": stats.get("impact_bw_low"),
+            "bw_high": stats.get("impact_bw_high"),
+            "by_weight_bins": stats.get("impact_by_weight_bins"),
+            "by_weight_bins_text": stats.get("impact_by_weight_bins_text", ""),
+        }
+    }
+
 
 
 

@@ -1,291 +1,169 @@
-# 🧠 AI_Exercise_Local - 地端 AI 運動分析系統
+# AI 個人化健康運動推薦系統  
+## System Architecture & Workflow
 
-一個基於 YOLOv11 Pose + MMAction2 PoseC3D + GPT + MySQL 的完整地端 AI 運動分析解決方案。
-
-## 📋 專案概述
-
-本專案提供了一個完整的運動動作分析系統，能夠：
-- 🎬 自動偵測影片中的人體姿勢
-- 🏃 識別並分類運動動作類型
-- 🤖 使用 AI 生成專業的運動建議
-- 💾 將結果安全地儲存到資料庫
-
-## 🏗️ 系統架構
-
-```
-AI_Exercise_Local/
-├── video_processor.py        # YOLOv11 Pose 關節偵測
-├── pose_classifier.py        # MMAction2 PoseC3D 動作分類
-├── semantic_advisor.py       # GPT 語意分析與建議
-├── database_handler.py       # MySQL 資料庫操作
-├── main_pipeline.py          # 主控流程整合
-├── config.yaml               # 系統設定檔
-├── requirements.txt           # Python 依賴套件
-├── videos/                   # 原始影片存放目錄
-├── pose_json/                # 姿勢 JSON 暫存
-├── results/                  # 分析結果輸出
-├── cache/                    # 中間結果暫存
-└── logs/                     # 系統執行日誌
-```
-
-## 🚀 快速開始
-
-### 1. 環境需求
-
-- **Python**: 3.10 或更高版本
-- **GPU**: NVIDIA GPU (建議，支援 CUDA 11.8+)
-- **記憶體**: 至少 8GB RAM
-- **儲存空間**: 至少 10GB 可用空間
-- **資料庫**: MySQL 8.0+
-
-### 2. 安裝依賴
-
-```bash
-# 複製專案
-git clone <repository-url>
-cd AI_Exercise_Local
-
-# 安裝 Python 依賴
-pip install -r requirements.txt
-
-# 或使用 conda
-conda install --file requirements.txt
-```
-
-### 3. 設定配置
-
-編輯 `config.yaml` 檔案：
-
-```yaml
-# API 設定
-api:
-  openai:
-    api_key: "your-openai-api-key-here"  # 替換為您的 OpenAI API Key
-
-# 資料庫設定
-database:
-  mysql:
-    host: "localhost"
-    user: "root"
-    password: "your-password"
-    database: "ai_exercise"
-```
-
-### 4. 準備資料庫
-
-```sql
--- 建立資料庫
-CREATE DATABASE ai_exercise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- 系統會自動建立必要的資料表
-```
-
-### 5. 執行系統
-
-```bash
-# 處理單一影片
-python main_pipeline.py --input videos/squat.mp4
-
-# 批次處理目錄中的所有影片
-python main_pipeline.py --input videos/ --batch
-
-# 使用自訂設定檔
-python main_pipeline.py --input videos/test.mp4 --config my_config.yaml
-```
-
-## 📖 使用說明
-
-### 命令列參數
-
-| 參數 | 簡寫 | 說明 | 範例 |
-|------|------|------|------|
-| `--input` | `-i` | 輸入影片檔案或目錄 | `--input videos/squat.mp4` |
-| `--config` | `-c` | 設定檔路徑 | `--config config.yaml` |
-| `--batch` | `-b` | 批次處理模式 | `--batch` |
-| `--no-db` | | 跳過資料庫寫入 | `--no-db` |
-
-### 處理流程
-
-1. **姿勢偵測** (`video_processor.py`)
-   - 使用 YOLOv11 Pose 模型偵測人體關鍵點
-   - 輸出骨架序列 JSON 檔案
-
-2. **動作分類** (`pose_classifier.py`)
-   - 使用 MMAction2 PoseC3D 模型分析動作
-   - 識別運動類型並計算信心值
-
-3. **AI 建議** (`semantic_advisor.py`)
-   - 呼叫 GPT API 生成專業建議
-   - 包含技術要點、修正建議、安全提醒
-
-4. **資料儲存** (`database_handler.py`)
-   - 將完整結果寫入 MySQL 資料庫
-   - 提供查詢和統計功能
-
-## 🔧 模組說明
-
-### VideoProcessor
-- **功能**: YOLOv11 Pose 姿勢偵測
-- **輸入**: 影片檔案 (MP4, AVI, MOV 等)
-- **輸出**: 姿勢序列 JSON 檔案
-- **特點**: 支援 GPU 加速、批次處理
-
-### PoseClassifier
-- **功能**: MMAction2 PoseC3D 動作分類
-- **輸入**: 姿勢序列 JSON 檔案
-- **輸出**: 動作分類結果
-- **支援動作**: 深蹲、伏地挺身、引體向上等 10 種動作
-
-### SemanticAdvisor
-- **功能**: GPT 語意分析與建議生成
-- **輸入**: 動作分類結果
-- **輸出**: Markdown 和 JSON 格式的建議報告
-- **內容**: 技術要點、修正建議、安全提醒、訓練建議
-
-### DatabaseHandler
-- **功能**: MySQL 資料庫操作
-- **功能**: 結果儲存、查詢、統計、匯出
-- **表格**: `pose_results`, `action_statistics`
-
-## 📊 輸出格式
-
-### JSON 結果檔案
-```json
-{
-  "video_info": {
-    "filename": "squat.mp4",
-    "duration": 30.5,
-    "processed_frames": 915
-  },
-  "classification_summary": {
-    "predicted_action": "squat",
-    "confidence": 0.85
-  },
-  "ai_advice": {
-    "action_analysis": "深蹲是複合性運動...",
-    "technical_points": "正確姿勢要領...",
-    "correction_suggestions": "常見錯誤修正...",
-    "safety_reminders": "安全注意事項...",
-    "training_recommendations": "訓練建議..."
-  }
-}
-```
-
-### Markdown 報告
-系統會自動生成易讀的 Markdown 格式報告，包含：
-- 影片資訊摘要
-- 動作分類結果
-- 詳細的 AI 建議
-- 技術要點和安全提醒
-
-## 🛠️ 進階設定
-
-### GPU 設定
-在 `config.yaml` 中設定：
-```yaml
-models:
-  yolov11_pose:
-    device: "cuda"  # 或 "cpu"
-  posec3d:
-    device: "cuda"  # 或 "cpu"
-```
-
-### 模型參數調整
-```yaml
-models:
-  yolov11_pose:
-    confidence_threshold: 0.5
-  posec3d:
-    batch_size: 1
-```
-
-### API 設定
-```yaml
-api:
-  openai:
-    model: "gpt-3.5-turbo"
-    max_tokens: 1000
-    temperature: 0.7
-```
-
-## 🔍 故障排除
-
-### 常見問題
-
-1. **CUDA 記憶體不足**
-   ```bash
-   # 降低批次大小或使用 CPU
-   # 在 config.yaml 中設定 device: "cpu"
-   ```
-
-2. **OpenAI API 錯誤**
-   ```bash
-   # 檢查 API Key 是否正確設定
-   # 確認 API 額度是否充足
-   ```
-
-3. **資料庫連接失敗**
-   ```bash
-   # 檢查 MySQL 服務是否啟動
-   # 確認資料庫設定是否正確
-   ```
-
-4. **模型載入失敗**
-   ```bash
-   # 檢查模型檔案是否存在
-   # 確認依賴套件是否正確安裝
-   ```
-
-### 日誌檔案
-系統會在 `logs/` 目錄中產生詳細的執行日誌：
-- `video_processor_YYYYMMDD.log`
-- `pose_classifier_YYYYMMDD.log`
-- `semantic_advisor_YYYYMMDD.log`
-- `database_handler_YYYYMMDD.log`
-- `main_pipeline_YYYYMMDD.log`
-
-## 📈 效能優化
-
-### 硬體建議
-- **GPU**: NVIDIA RTX 3080 或更高
-- **CPU**: Intel i7 或 AMD Ryzen 7
-- **RAM**: 16GB 或更多
-- **儲存**: SSD 硬碟
-
-### 軟體優化
-- 使用 CUDA 11.8+ 版本
-- 啟用混合精度訓練
-- 調整批次大小以適應硬體
-
-## 🤝 貢獻指南
-
-1. Fork 專案
-2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 開啟 Pull Request
-
-## 📄 授權條款
-
-本專案採用 MIT 授權條款 - 詳見 [LICENSE](LICENSE) 檔案
-
-## 📞 支援與聯絡
-
-- **問題回報**: [GitHub Issues](https://github.com/your-repo/issues)
-- **功能建議**: [GitHub Discussions](https://github.com/your-repo/discussions)
-- **技術支援**: 請透過 GitHub Issues 聯絡
-
-## 🔄 版本更新
-
-### v1.0.0 (2024-10-23)
-- ✨ 初始版本發布
-- 🎯 支援 10 種基本運動動作
-- 🤖 整合 GPT-3.5-turbo 建議生成
-- 💾 完整的 MySQL 資料庫支援
-- 📊 詳細的處理統計和日誌
+本系統旨在建置一套具備**醫療安全考量、動作理解能力與個人化推薦機制**之 AI 健康運動推薦系統，  
+透過結合使用者健康資訊、運動影片內容分析（YOLO Pose）、  
+以及依據 ACSM / FITT 原則之規則式推論，  
+提供不同族群安全且合適之運動影片建議。
 
 ---
 
-**🎉 感謝使用 AI_Exercise_Local！**
+## 一、系統整體設計概念
 
-如有任何問題或建議，歡迎隨時聯絡我們。
+本系統採用 **多層式（Multi-layer）架構設計**，  
+將「使用者需求判斷」、「影片內容理解」與「個人化醫療決策」明確分離，  
+以確保系統的可解釋性、可擴充性與醫療安全性。
+
+核心設計原則如下：
+
+- 使用者需求判斷 **不直接干涉影片內容分析**
+- 影片動作理解（YOLO）保持**客觀與使用者無關**
+- 個人化推薦僅發生於分析結果與使用者狀況整合階段
+
+---
+
+## 二、系統流程總覽
+
+系統整體流程可分為以下五個主要階段：
+
+1. 使用者資料輸入與健康狀況建模  
+2. 候選影片初步篩選（Rule-based Filtering）  
+3. 影片動作內容分析（YOLO Pose Analysis）  
+4. 個人化醫療安全判斷與適配分析  
+5. 推薦結果輸出與紀錄保存  
+
+---
+
+## 三、系統流程詳細說明
+
+---
+
+### 3.1 使用者資料輸入層（User Input Layer）
+
+本層負責蒐集與整理使用者之基本資訊與健康狀況，  
+作為後續推薦判斷之依據。
+
+**輸入資料包含：**
+- 基本資料：年齡、性別
+- 健康狀況：慢性病史（如心衰竭、高血壓、糖尿病等）
+- 特殊狀況：手術史、關節限制
+- 健康目標：心肺功能、肌力訓練、下肢強化、復健導向等
+- 活動程度與風險等級（可選）
+
+所有使用者資料會被轉換為結構化欄位，  
+以利後續規則比對與推論。
+
+---
+
+### 3.2 候選影片初步篩選層（Pre-filtering Layer）
+
+本階段的目的是：  
+**從影片資料集中，排除「明顯不適合」的影片，  
+僅保留「可能適合」的候選影片集合。**
+
+此階段**不進行影像分析**，  
+而是依據以下資訊進行規則式篩選：
+
+- 影片既有標籤（動作類型、強度、部位）
+- ACSM / FITT 原則定義之運動類型
+- 使用者健康禁忌與風險條件
+
+篩選結果為：
+> 一組「候選影片清單（Candidate Video Set）」
+
+此清單將作為後續 YOLO 分析的輸入來源。
+
+---
+
+### 3.3 影片動作分析層（YOLO Pose Analysis Layer）
+
+本層負責對「已選定的候選影片」進行**純粹的動作內容理解**，  
+其分析過程**不包含任何使用者個人資訊**。
+
+YOLO Pose 分析功能包含：
+
+- 關節點偵測（Keypoint Detection）
+- 關節角度計算（Joint Angle Calculation）
+- 動作幅度（Range of Motion, ROM）
+- 動作節律與頻率（Movement Frequency）
+- 姿勢型態判斷（站立、坐姿、躺姿）
+- 潛在高衝擊或單腳負重動作辨識
+
+YOLO 的輸出結果為一組**客觀的動作特徵描述**，  
+代表該影片「實際上在做什麼」。
+
+---
+
+### 3.4 個人化適配與醫療安全判斷層  
+（Personalization & Medical Safety Layer）
+
+本層為系統核心決策層，  
+負責將 **YOLO 的客觀分析結果**  
+與 **使用者健康狀況模型** 進行整合比對。
+
+判斷邏輯包含：
+
+- 動作強度 × 使用者心肺風險
+- 關節活動需求 × 使用者關節限制
+- 動作頻率 × 使用者耐受能力
+- 姿勢型態 × 使用者疾病禁忌
+
+此階段可透過：
+- JSON 規則庫
+- RAG 機制
+- 臨床指引條件比對
+
+產生以下結果：
+- 適合 / 不適合判斷
+- 潛在風險說明
+- 運動調整建議（如降低強度、縮短時間）
+
+---
+
+### 3.5 推薦輸出與系統回饋層（Output Layer）
+
+最終系統會輸出：
+
+- 個人化推薦運動影片清單
+- 每支影片之：
+  - 適配理由
+  - 強度與部位說明
+  - 注意事項與禁忌提醒
+- 推薦信心分數（可選）
+
+同時，系統會將以下資料寫入資料庫：
+
+- 使用者推薦紀錄
+- 分析結果摘要
+- 推薦決策依據
+- 使用行為紀錄（供後續模型優化）
+
+---
+
+## 四、系統設計優勢
+
+- **模組化設計**：各層獨立，易於擴充與維護
+- **高可解釋性**：YOLO 分析與醫療判斷分離
+- **符合臨床邏輯**：與 ACSM / FITT 原則一致
+- **高度個人化**：同一影片可對不同使用者產生不同推薦結果
+
+---
+
+## 五、系統擴充性說明
+
+未來可擴充功能包含：
+
+- 長期使用者行為回饋學習
+- 動作品質評分（Quality Score）
+- 即時姿勢修正與回饋
+- 與穿戴式裝置資料整合
+
+---
+
+## 六、總結
+
+本系統透過清楚區分  
+「影片在做什麼」與「誰適合做」，  
+成功整合電腦視覺、規則推論與醫療安全考量，  
+提供一套具實用性與研究價值的 AI 個人化健康運動推薦架構。
+
