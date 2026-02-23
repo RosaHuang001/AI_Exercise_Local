@@ -7,6 +7,7 @@ ultralytics>=8.2.0         # YOLOv8 / YOLOv11 Pose 模型
 numpy>=1.26.0
 pandas>=2.2.0
 opencv-python>=4.9.0
+Pillow>=10.0.0              # 中文 TTF 繪字（demo_guided_training_ui 等）
 tqdm>=4.66.0
 scipy>=1.12.0
 PyYAML>=6.0.1
@@ -25,6 +26,10 @@ fastapi>=0.111.0
 uvicorn[standard]>=0.30.0
 pyjwt>=2.8.0
 python-multipart>=0.0.9
+
+# === 瀏覽器即時影像（跟練用自己攝影機）===
+streamlit-webrtc>=0.64.0
+av>=10.0.0
 
 # === Logging & System Management ===
 colorlog>=6.8.0

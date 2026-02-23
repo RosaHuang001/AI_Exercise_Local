@@ -1,0 +1,140 @@
+<mxfile host="app.diagrams.net" agent="draw.io" version="28.2.9">
+  <diagram id="main_flow" name="main.py 執行流程">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 標題 -->
+        <mxCell id="title" value="main.py 程式執行流程&#xa;AI 個人化健康運動推薦系統" style="rounded=1;strokeWidth=2.5;fillColor=#E3F2FD;strokeColor=#1976D2;fontSize=16;fontStyle=1;fontFamily=Microsoft YaHei;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="200" y="20" width="500" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Step 1 -->
+        <mxCell id="step1" value="Step 1  使用者輸入&#xa;get_user_input() → user_input（問卷：年齡、性別、NYHA、症狀、病史…）" style="rounded=1;arcSize=8;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="110" width="660" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="title" target="step1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 2 -->
+        <mxCell id="step2" value="Step 2  使用者條件轉換&#xa;build_user_context(user_input) → user_condition, risk_assessment（正規化代碼、風險篩選）" style="rounded=1;arcSize=8;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="186" width="660" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step1" target="step2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 2.5 -->
+        <mxCell id="step25_label" value="Step 2.5  前置動作推薦" style="rounded=1;arcSize=6;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;fontSize=13;fontStyle=1;fontFamily=Microsoft YaHei;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="120" y="262" width="660" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="step25_1" value="load_exercise_library() → exercise_library" style="rounded=1;arcSize=6;fillColor=#F1F8E9;strokeColor=#558B2F;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="302" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step25_2" value="hard_filter_exercises(user_state, library) → filtered（通過安全篩選的動作）" style="rounded=1;arcSize=6;fillColor=#F1F8E9;strokeColor=#558B2F;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="344" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step25_3" value="soft_rank_exercises(user_state, filtered['included']) → ranked_exercises（含推薦理由）" style="rounded=1;arcSize=6;fillColor=#F1F8E9;strokeColor=#558B2F;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="386" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step25_exit" value="若 ranked_exercises 為空 → sys.exit(1)" style="rounded=1;arcSize=6;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=1.5;fontSize=11;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=6;" parent="1" vertex="1">
+          <mxGeometry x="160" y="428" width="620" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="a25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step2" target="step25_label" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a25b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2E7D32;strokeWidth=1;endArrow=classic;" parent="1" source="step25_label" target="step25_1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a25c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2E7D32;strokeWidth=1;endArrow=classic;" parent="1" source="step25_1" target="step25_2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a25d" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2E7D32;strokeWidth=1;endArrow=classic;" parent="1" source="step25_2" target="step25_3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a25e" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2E7D32;strokeWidth=1;endArrow=classic;" parent="1" source="step25_3" target="step25_exit" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 3 -->
+        <mxCell id="step3" value="Step 3  RAG 規則檢索&#xa;ACSMRagEngine(knowledge_path).retrieve_rules(population, condition) → rag_results&#xa;RuleController.process(rag_results, risk_assessment) → rules（前 N 條）" style="rounded=1;arcSize=8;fillColor=#E8EAF6;strokeColor=#3949AB;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="476" width="660" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step25_exit" target="step3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 4 -->
+        <mxCell id="step4" value="Step 4  依推薦結果選擇影片&#xa;讀取 exercise_video_map.json，依 ranked_exercises 組 video_jobs（exercise_id + video_path），支援一動作多支（左/右）" style="rounded=1;arcSize=8;fillColor=#FCE4EC;strokeColor=#AD1457;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="560" width="660" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="a4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step3" target="step4" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 5 -->
+        <mxCell id="step5" value="Step 5  初始化 YOLO&#xa;YOLO(YOLO_MODEL_PATH) → yolo_model" style="rounded=1;arcSize=8;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="636" width="660" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="a5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step4" target="step5" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 6 迴圈 -->
+        <mxCell id="step6_label" value="Step 6  影片分析與安全判斷（對每支 video_jobs 迴圈）" style="rounded=1;arcSize=6;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;fontSize=13;fontStyle=1;fontFamily=Microsoft YaHei;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="120" y="704" width="660" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="step6_1" value="6a  快取檢查 → 有則載入 yolo_result，無則 yolo_process_one_video() + pack_yolo_result()，攤平欄位後可寫入快取" style="rounded=1;arcSize=6;fillColor=#FFFDE7;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="744" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step6_2" value="6b  decide_exercise(user_condition, risk_assessment, yolo_result, rules) → decision, reasons（RECOMMEND/CAUTION）" style="rounded=1;arcSize=6;fillColor=#FFFDE7;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="786" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step6_3" value="6c  GPT 快取檢查 → 有則載入，無則 call_openai_label(...) 產出 gpt_summary，可寫入快取" style="rounded=1;arcSize=6;fillColor=#FFFDE7;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="828" width="620" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="step6_4" value="6d  組 result（video, exercise_id, decision, reasons, recommendation_reason, final_decision_reason, yolo_result, gpt_summary）→ 加入 all_results，印出 format_video_report()" style="rounded=1;arcSize=6;fillColor=#FFFDE7;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=8;" parent="1" vertex="1">
+          <mxGeometry x="160" y="870" width="620" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="a6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step5" target="step6_label" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F9A825;strokeWidth=1;endArrow=classic;" parent="1" source="step6_label" target="step6_1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F9A825;strokeWidth=1;endArrow=classic;" parent="1" source="step6_1" target="step6_2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6d" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F9A825;strokeWidth=1;endArrow=classic;" parent="1" source="step6_2" target="step6_3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6e" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F9A825;strokeWidth=1;endArrow=classic;" parent="1" source="step6_3" target="step6_4" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Step 7 -->
+        <mxCell id="step7" value="Step 7  一週計畫與輸出&#xa;generate_weekly_plan(user_condition, risk_assessment, all_results) → weekly_plan&#xa;寫入 results/final_output.json（含 user_input, user_condition, rules, results, weekly_plan）&#xa;終端顯示【您的本週運動計畫】與 plan_text，輸出路徑提示" style="rounded=1;arcSize=8;fillColor=#E0F2F1;strokeColor=#00695C;strokeWidth=2;fontSize=13;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;padding=10;" parent="1" vertex="1">
+          <mxGeometry x="120" y="934" width="660" height="88" as="geometry" />
+        </mxCell>
+        <mxCell id="a7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step6_4" target="step7" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 結束 -->
+        <mxCell id="end" value="系統執行完成" style="rounded=1;arcSize=8;fillColor=#ECEFF1;strokeColor=#455A64;strokeWidth=2;fontSize=13;fontStyle=1;fontFamily=Microsoft YaHei;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="320" y="1042" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a_end" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;" parent="1" source="step7" target="end" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 圖例/資料來源 -->
+        <mxCell id="legend" value="資料來源：main.py（rag/user_input, user_condition_mapper；modules/recommender_filter；rag/rag_engine, rule_controller；YOLO + yolo_pose_rep_counter；modules/gpt_summary）" style="text;html=1;fontSize=10;fontColor=#666666;fontFamily=Microsoft YaHei;align=left;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="120" y="1100" width="660" height="28" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
