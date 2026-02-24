@@ -3,656 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運動復健影片推薦系統</title>
-    <!-- 引入 Tailwind CSS 進行快速排版與美化 -->
+    <title>三總心臟衰竭復健系統</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Lucide Icons 用於圖標 -->
+    <!-- 引入 Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- 設定 Google Fonts (Noto Sans TC) -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #cbebff 100%);
-            min-height: 100vh;
-        }
-
-        /* 自定義動畫：呼吸燈效果 */
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        
-        /* 自定義動畫：掃描線 */
-        @keyframes scan {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-
-        .ai-pulse {
-            animation: breathe 2s infinite ease-in-out;
-        }
-
-        .scan-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #3b82f6;
-            box-shadow: 0 0 10px #3b82f6;
-            animation: scan 2s infinite linear;
-        }
-
-        /* 隱藏滾動條但保留功能 */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #cbebff 100%); min-height: 100vh; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .ai-pulse { animation: breathe 2s infinite ease-in-out; }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 2px; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; animation: scan 2s infinite linear; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="text-gray-700 flex items-center justify-center p-4">
 
-    <!-- 主容器 -->
     <div class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[650px] relative flex flex-col">
-        
-        <!-- header -->
         <header class="bg-blue-600 p-6 text-white flex justify-between items-center shadow-md z-10">
-            <div class="flex items-center gap-2">
-                <i data-lucide="activity" class="w-6 h-6"></i>
-                <h1 class="text-xl font-bold tracking-wider">三總心臟衰竭復健系統</h1>
-            </div>
+            <div class="flex items-center gap-2"><i data-lucide="activity" class="w-6 h-6"></i><h1 class="text-xl font-bold tracking-wider">三總心臟衰竭復健系統</h1></div>
             <div class="text-sm opacity-80" id="current-date"></div>
         </header>
 
-        <!-- 進度條 -->
         <div id="progress-container" class="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-center gap-8 text-sm font-medium z-10">
-            <div id="step-indicator-1" class="flex items-center gap-2 text-blue-600 transition-colors">
-                <span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center border border-blue-200">1</span>
-                基本資料
-            </div>
-            <div class="text-gray-300 flex items-center">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </div>
-            <div id="step-indicator-2" class="flex items-center gap-2 text-gray-400 transition-colors">
-                <span class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">2</span>
-                今日生理數據
-            </div>
+            <div id="step-indicator-1" class="flex items-center gap-2 text-blue-600 transition-colors"><span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center border border-blue-200">1</span>基本資料</div>
+            <div class="text-gray-300 flex items-center"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>
+            <div id="step-indicator-2" class="flex items-center gap-2 text-gray-400 transition-colors"><span class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">2</span>今日生理數據</div>
         </div>
 
-        <!-- 內容區域 -->
         <main class="flex-1 p-6 relative overflow-y-auto no-scrollbar">
-
-            <!-- ================= 步驟 1：基本資料 (Step 1) ================= -->
+            <!-- 步驟 1 -->
             <div id="section-step-1" class="max-w-lg mx-auto py-4 fade-in">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">建立您的專屬檔案</h2>
-                    <p class="text-gray-500">告訴我們您的長期健康狀況。</p>
-                </div>
-
+                <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-800 mb-2">建立您的專屬檔案</h2></div>
                 <form id="formStep1" onsubmit="goToStep2(event)" class="space-y-6">
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">年齡</label>
-                            <select id="userAge" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition bg-white">
-                                <option value="" disabled selected>請選擇年齡區間</option>
-                                <option value="20-39">20 - 39 歲</option>
-                                <option value="40-59">40 - 59 歲</option>
-                                <option value="60-79">60 - 79 歲</option>
-                                <option value="80+">80 歲以上</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">性別</label>
-                            <select id="userGender" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition bg-white">
-                                <option value="" disabled selected>請選擇性別</option>
-                                <option value="male">男</option>
-                                <option value="female">女</option>
-                            </select>
-                        </div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">年齡</label><select id="userAge" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white"><option value="" disabled selected>請選擇</option><option value="18-39">18 - 39 歲 (年輕族群)</option><option value="40-54">40 - 54 歲 (中年族群)</option><option value="55-64">55 - 64 歲 (中老年族群)</option><option value="65-74">65 - 74 歲 (老年族群)</option><option value="75+">75 歲以上 (高齡族群)</option></select></div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">性別</label><select id="userGender" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white"><option value="" disabled selected>請選擇</option><option value="male">男</option><option value="female">女</option></select></div>
                     </div>
-
-                    <!-- 將 NYHA 與 基礎體重 併在同一列 -->
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">NYHA 分級 (心臟衰竭程度)</label>
-                            <select id="nyhaClass" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition bg-white">
-                                <option value="" disabled selected>請選擇分級</option>
-                                <option value="I">Class I (日常活動不受限)</option>
-                                <option value="II">Class II (輕度受限)</option>
-                                <option value="III">Class III (明顯受限)</option>
-                                <option value="IV">Class IV (無法進行任何活動)</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">基礎體重 (乾體重)</label>
-                            <div class="relative">
-                                <input type="number" id="baseWeight" step="0.1" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition bg-white" placeholder="例如: 65.5">
-                                <span class="absolute right-4 top-3.5 text-gray-400 text-sm">公斤</span>
-                            </div>
-                        </div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">NYHA 分級</label><select id="nyhaClass" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white"><option value="" disabled selected>請選擇</option><option value="I">Class I</option><option value="II">Class II</option><option value="III">Class III</option><option value="IV">Class IV</option></select></div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">基礎體重 (公斤)</label><input type="number" id="baseWeight" step="0.1" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="65.5"></div>
                     </div>
-
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-gray-700">欲改善目標</label>
-                        <select id="improveGoal" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition bg-white">
-                            <option value="" disabled selected>請選擇目標</option>
-                            <option value="cardio">提升心肺功能</option>
-                            <option value="strength">增強肌力</option>
-                            <option value="mobility">改善關節活動度</option>
-                            <option value="pain">減緩疼痛</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">規律有氧運動習慣</label><select id="exerciseHabit" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white"><option value="" disabled selected>請選擇</option><option value="none">無規律</option><option value="less_than_4_weeks">不到 4 週</option><option value="more_than_4_weeks">超過 4 週</option></select></div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">欲改善目標</label><select id="improveGoal" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white"><option value="" disabled selected>請選擇</option><option value="cardio">提升心肺 (有氧)</option><option value="strength">增強肌力 (阻力)</option><option value="mobility">改善活動度</option><option value="pain">減緩疼痛</option></select></div>
                     </div>
-
-                    <!-- 改為全寬度的多選標籤區塊 -->
-                    <div class="space-y-3">
-                        <label class="text-sm font-medium text-gray-700">慢性病史 <span class="text-xs text-blue-500 font-normal ml-1">(可多選)</span></label>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" value="none" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">無</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">高血壓</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">糖尿病</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">高血脂症</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">冠心症/心肌梗塞</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">心房顫動/心律不整</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">慢性腎臟病</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">慢性阻塞性肺病/氣喘</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">嚴重關節炎/骨質疏鬆</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="chronic" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">中風後遺症/神經病變</span></label>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label class="text-sm font-medium text-gray-700">手術史 <span class="text-xs text-blue-500 font-normal ml-1">(可多選)</span></label>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" value="none" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">無</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">心導管/支架置放</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">冠狀動脈繞道手術</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">心臟瓣膜修補/置換</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">心律調節器/去顫器</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">人工關節置換</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">脊椎手術</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="surgery" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">胸/腹部大手術</span></label>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label class="text-sm font-medium text-gray-700">心衰竭主要症狀 <span class="text-xs text-blue-500 font-normal ml-1">(可多選)</span></label>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" value="none" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">無</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">容易疲倦無力 (累)</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">活動時呼吸喘促 (喘)</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">下肢水腫 (腫)</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">平躺呼吸困難/夜間喘醒</span></label>
-                            <label class="cursor-pointer"><input type="checkbox" name="symptoms" class="peer sr-only"><span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all shadow-sm">夜間頻尿</span></label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-md transition flex justify-center items-center gap-2">
-                        下一步：填寫今日生理數據
-                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                    </button>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-md transition flex justify-center items-center gap-2">下一步：填寫今日生理數據 <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
                 </form>
             </div>
 
-            <!-- ================= 步驟 2：今日生理數據 (Step 2) ================= -->
+            <!-- 步驟 2 -->
             <div id="section-step-2" class="max-w-lg mx-auto py-4 hidden">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">今日生理數據評估</h2>
-                    <p class="text-gray-500">為了運動安全，系統必須評估您 <span class="font-bold text-red-500">當下</span> 的身體狀況。</p>
-                </div>
-
-                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl flex gap-3 mb-6 text-yellow-800 text-sm">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
-                    <p>依據<strong>三軍總醫院心臟衰竭中心</strong>照護標準，若體重增加過快或血壓/心跳超標，請立刻暫停運動並盡速回診。</p>
-                </div>
-
+                <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-800 mb-2">今日生理數據</h2></div>
                 <form id="formStep2" onsubmit="startAnalysis(event)" class="space-y-6">
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">收縮壓 (高壓)</label>
-                            <div class="relative">
-                                <input type="number" id="sysBP" required min="50" max="250" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" placeholder="例如: 120">
-                                <span class="absolute right-4 top-3.5 text-gray-400 text-sm">mmHg</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">舒張壓 (低壓)</label>
-                            <div class="relative">
-                                <input type="number" id="diaBP" required min="30" max="150" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" placeholder="例如: 80">
-                                <span class="absolute right-4 top-3.5 text-gray-400 text-sm">mmHg</span>
-                            </div>
-                        </div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">收縮壓 (高壓)</label><input type="number" id="sysBP" required min="50" max="250" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="120"></div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">舒張壓 (低壓)</label><input type="number" id="diaBP" required min="30" max="150" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="80"></div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">安靜心跳率 (脈搏)</label>
-                            <div class="relative">
-                                <input type="number" id="heartRate" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition" placeholder="例如: 75">
-                                <span class="absolute right-4 top-3.5 text-gray-400 text-sm">次/分</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">今日體重 (運動前量測)</label>
-                            <div class="relative">
-                                <input type="number" id="todayWeight" step="0.1" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none transition bg-white" placeholder="例如: 66.0">
-                                <span class="absolute right-4 top-3.5 text-gray-400 text-sm">公斤</span>
-                            </div>
-                        </div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">心跳率</label><input type="number" id="heartRate" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="75"></div>
+                        <div class="space-y-2"><label class="text-sm font-medium text-gray-700">今日體重</label><input type="number" id="todayWeight" step="0.1" required min="30" max="200" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="66.0"></div>
                     </div>
-
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-700">當下不適症狀</label>
-                        <select id="currentSymptom" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none transition bg-white">
-                            <option value="" disabled selected>目前有任何不舒服嗎？</option>
-                            <option value="none">精神良好，無不適</option>
-                            <option value="mild_tired">稍微疲倦</option>
-                            <option value="chest_pain">胸悶 / 胸痛 / 嚴重頭暈 ⚠️</option>
-                            <option value="breathless">休息時也會喘 / 夜間需墊高枕頭睡覺 ⚠️</option>
+                        <select id="currentSymptom" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white">
+                            <option value="none" selected>無不適</option><option value="mild_tired">稍微疲倦</option><option value="chest_pain">胸悶 / 嚴重頭暈 ⚠️</option><option value="breathless">休息時也會喘 ⚠️</option>
                         </select>
                     </div>
-
                     <div class="flex gap-4">
-                        <button type="button" onclick="goBackToStep1()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 rounded-xl transition flex justify-center items-center">
-                            上一步
-                        </button>
-                        <button type="submit" class="w-2/3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl flex justify-center items-center gap-2">
-                            <i data-lucide="sparkles" class="w-5 h-5"></i>
-                            開始 AI 分析
-                        </button>
+                        <button type="button" onclick="goBackToStep1()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 rounded-xl">上一步</button>
+                        <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2">開始 AI 分析</button>
                     </div>
                 </form>
             </div>
 
-            <!-- ================= AI 分析動畫區塊 (Loading Section) ================= -->
+            <!-- Loading -->
             <div id="section-loading" class="hidden absolute inset-0 bg-white flex flex-col items-center justify-center z-20">
-                <div class="relative w-32 h-32 mb-8">
-                    <!-- 核心圓圈 -->
-                    <div class="absolute inset-0 bg-blue-100 rounded-full ai-pulse"></div>
-                    <div class="absolute inset-4 bg-blue-500 rounded-full flex items-center justify-center shadow-lg text-white">
-                        <i data-lucide="brain-circuit" class="w-12 h-12"></i>
+                <div class="relative w-32 h-32 mb-8"><div class="absolute inset-0 bg-blue-100 rounded-full ai-pulse"></div><div class="absolute inset-4 bg-blue-500 rounded-full flex items-center justify-center text-white"><i data-lucide="brain-circuit" class="w-12 h-12"></i></div><div class="absolute inset-0 rounded-full overflow-hidden"><div class="scan-line"></div></div></div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">正在綜合評估與生成課表...</h3><p class="text-sm text-gray-500">AI 正在為您量身打造專屬指導語，請稍候</p>
+            </div>
+
+            <!-- 串流影像 -->
+            <div id="section-streaming" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 md:p-8 backdrop-blur-sm">
+                <div class="w-full max-w-6xl bg-gray-900 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col h-[85vh] border border-gray-700">
+                    <div class="bg-gray-800 p-4 flex justify-between items-center text-white border-b border-gray-700 shrink-0">
+                        <div class="flex items-center gap-3"><div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div><h3 class="font-bold text-lg tracking-wider">AI 即時跟練系統 (Live Stream)</h3></div>
+                        <button onclick="stopStreaming()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-xl font-bold text-sm transition shadow flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4"></i>結束訓練</button>
                     </div>
-                    <!-- 掃描特效 -->
-                    <div class="absolute inset-0 rounded-full overflow-hidden">
-                        <div class="scan-line"></div>
+                    <div class="flex-1 bg-black flex items-center justify-center relative w-full overflow-hidden">
+                        <div id="stream-loading" class="absolute inset-0 flex flex-col items-center justify-center text-white z-10"><i data-lucide="loader-2" class="w-12 h-12 animate-spin text-blue-500 mb-4"></i><p class="text-lg font-medium tracking-widest">載入 AI 模型中...</p></div>
+                        <img id="ai-stream-view" class="w-full h-full object-contain relative z-20" onload="document.getElementById('stream-loading').style.display='none'" onerror="handleStreamError()" />
                     </div>
-                </div>
-                
-                <h3 class="text-2xl font-bold text-gray-800 mb-2">AI 正在綜合評估安全性...</h3>
-                <p id="loading-text" class="text-blue-500 font-medium min-h-[24px]">驗證當日血壓與心跳...</p>
-                
-                <div class="w-64 h-2 bg-gray-100 rounded-full mt-6 overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-[3000ms] ease-out"></div>
                 </div>
             </div>
 
-            <!-- ================= 結果顯示區塊 (Results Section) ================= -->
-            <div id="section-results" class="hidden fade-in">
-                <!-- 用戶摘要卡 -->
-                <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 flex items-start gap-4" id="resultHeaderCard">
-                    <div class="bg-blue-100 p-3 rounded-full text-blue-600" id="resultHeaderIcon">
-                        <i data-lucide="user" class="w-6 h-6"></i>
-                    </div>
+            <!-- 結果區塊 -->
+            <div id="section-results" class="hidden fade-in pb-10">
+                <div id="resultHeaderCard" class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex items-start mb-6">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 mr-4 mt-1" id="resultHeaderIcon"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
                     <div class="w-full">
-                        <h3 class="font-bold text-gray-800" id="resultTitle">分析報告：<span id="resultSummary"></span></h3>
-                        <p class="text-sm text-gray-600 mt-1" id="resultDescription">
-                            針對您的狀況與 <span id="resultGoal" class="font-bold text-blue-600"></span> 的目標，
-                            AI 判定目前適合以下修復訓練。
-                        </p>
+                        <h3 class="font-bold text-gray-800 text-lg mb-3" id="resultTitle">AI 專屬課表總結</h3>
+                        <p class="text-sm text-gray-700 leading-relaxed bg-blue-50/50 p-4 rounded-xl border border-blue-100" id="resultSummary"></p>
                     </div>
                 </div>
 
-                <!-- 警告區塊 (只有數據超標時才會顯示) -->
-                <div id="dangerAlert" class="hidden bg-red-50 border border-red-200 p-6 rounded-xl mb-8 flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="shield-alert" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-red-700 mb-2">醫療安全警示：今日不宜進行運動</h3>
-                    <p class="text-gray-700 mb-4" id="dangerReason">您的生理數據超出安全範圍。</p>
-                    <div class="text-sm text-red-600 bg-white px-4 py-3 rounded-lg border border-red-100 shadow-sm w-full text-left">
-                        <strong>👩‍⚕️ AI 醫療建議：</strong><br>
-                        請立刻暫停任何運動計畫。請在安靜處休息15-30分鐘後重新量測，若數據未改善或持續有不適感，請立即聯繫您的心臟科醫師或前往就醫。
-                    </div>
+                <div id="dangerAlert" class="hidden bg-red-50 border border-red-200 p-6 rounded-2xl mb-8 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4"><i data-lucide="shield-alert" class="w-8 h-8"></i></div>
+                    <h3 class="text-xl font-bold text-red-700 mb-2">醫療安全警示：今日不宜運動</h3>
+                    <p class="text-sm text-red-600 bg-white px-4 py-3 rounded-lg border border-red-100 w-full text-left" id="dangerReason"></p>
                 </div>
 
-                <!-- 正常影片與計畫區塊 (若危險會隱藏) -->
                 <div id="normalPlanArea" class="grid md:grid-cols-2 gap-8">
-                    <!-- 左側：推薦影片 -->
                     <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <i data-lucide="youtube" class="text-red-500"></i>
-                            <h3 class="text-lg font-bold">AI 推薦復健影片</h3>
-                        </div>
-                        
-                        <div class="space-y-4" id="videoList">
-                            <!-- 影片卡片由 JS 生成 -->
-                        </div>
+                        <div class="flex items-center gap-2 mb-4"><i data-lucide="youtube" class="text-red-500"></i><h3 class="text-lg font-bold">今日推薦動作清單</h3></div>
+                        <div class="space-y-4" id="videoList"></div>
                     </div>
-
-                    <!-- 右側：一週計畫 -->
                     <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <i data-lucide="calendar" class="text-green-500"></i>
-                            <h3 class="text-lg font-bold">個人化一週運動表</h3>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                            <div class="space-y-0" id="weeklyPlan">
-                                <!-- 計畫表由 JS 生成 -->
-                            </div>
-                        </div>
+                        <div class="flex items-center gap-2 mb-4"><i data-lucide="calendar" class="text-green-500"></i><h3 class="text-lg font-bold">個人化一週課表</h3></div>
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100" id="weeklyPlan"></div>
                     </div>
                 </div>
-
-                <button onclick="location.reload()" class="mt-8 w-full border-2 border-gray-200 text-gray-500 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
-                    重新評估
-                </button>
+                <button onclick="location.reload()" class="mt-8 w-full border-2 border-gray-200 text-gray-500 font-bold py-3 rounded-xl hover:bg-gray-50 transition">重新評估</button>
             </div>
-
         </main>
     </div>
 
     <script>
-        // 初始化 Lucide 圖標
+        const API_ENDPOINT_ANALYZE = "http://127.0.0.1:5000/api/analyze";
         lucide.createIcons();
-        
-        // 設定今日日期
-        const today = new Date();
-        document.getElementById('current-date').innerText = today.toISOString().split('T')[0];
-
-        // 儲存用戶資料的全局變數
+        document.getElementById('current-date').innerText = new Date().toISOString().split('T')[0];
         let globalUserData = {};
 
-        // 驗證多選題是否至少選擇一項的內部邏輯
-        function updateCheckboxRequirement() {
-            const groups = ['chronic', 'surgery', 'symptoms'];
-            groups.forEach(group => {
-                const checkboxes = document.querySelectorAll(`input[name="${group}"]`);
-                const isChecked = Array.from(checkboxes).some(cb => cb.checked);
-                checkboxes.forEach(cb => {
-                    cb.required = !isChecked; // 若未勾選任何項目，則設為必填
-                });
-            });
-        }
+        function goToStep2(e) { e.preventDefault(); ['Age', 'Gender', 'NyhaClass', 'BaseWeight', 'ExerciseHabit', 'ImproveGoal'].forEach(id => { globalUserData[id.toLowerCase()] = document.getElementById(id.charAt(0).toLowerCase() + id.slice(1)).value; }); globalUserData.baseWeight = parseFloat(document.getElementById('baseWeight').value); document.getElementById('section-step-1').classList.add('hidden'); document.getElementById('section-step-2').classList.remove('hidden'); document.getElementById('step-indicator-1').classList.replace('text-blue-600', 'text-gray-400'); document.getElementById('step-indicator-2').classList.replace('text-gray-400', 'text-blue-600'); }
+        function goBackToStep1() { document.getElementById('section-step-2').classList.add('hidden'); document.getElementById('section-step-1').classList.remove('hidden'); document.getElementById('step-indicator-2').classList.replace('text-blue-600', 'text-gray-400'); document.getElementById('step-indicator-1').classList.replace('text-gray-400', 'text-blue-600'); }
 
-        // 處理多選題「無」的排他性邏輯與必填更新
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', function() {
-                const name = this.name;
-                if (this.value === 'none' && this.checked) {
-                    // 若勾選「無」，自動取消同群組的其他選項
-                    document.querySelectorAll(`input[name="${name}"]:not([value="none"])`).forEach(other => other.checked = false);
-                } else if (this.value !== 'none' && this.checked) {
-                    // 若勾選其他選項，自動取消「無」
-                    const noneCb = document.querySelector(`input[name="${name}"][value="none"]`);
-                    if (noneCb) noneCb.checked = false;
-                }
-                updateCheckboxRequirement();
-            });
-        });
-
-        // 初始執行一次
-        updateCheckboxRequirement();
-
-        // 模擬的復健資料庫
-        const rehabData = {
-            cardio: {
-                videos: [
-                    { title: "坐姿心肺啟動操", duration: "8:30", tags: ["心肺", "低強度"], color: "bg-red-100 text-red-600" },
-                    { title: "溫和踏步有氧", duration: "12:00", tags: ["有氧", "適應NYHA"], color: "bg-blue-100 text-blue-600" }
-                ],
-                plan: ["坐姿深呼吸 5分鐘", "輕度踏步 10分鐘", "休息與伸展", "輕度踏步 15分鐘", "休息日", "手搖車或散步 15分鐘", "全身溫和伸展"]
-            },
-            strength: {
-                videos: [
-                    { title: "彈力帶上肢強化", duration: "10:15", tags: ["肌力", "彈力帶"], color: "bg-green-100 text-green-600" },
-                    { title: "下肢防跌阻力訓練", duration: "15:20", tags: ["防跌", "下肢"], color: "bg-purple-100 text-purple-600" }
-                ],
-                plan: ["上肢彈力帶 3組", "靠牆深蹲 10次x2", "休息日", "坐姿抬腿 15次x3", "核心啟動訓練", "全身綜合肌力", "活動度恢復"]
-            },
-            mobility: {
-                videos: [
-                    { title: "晨間關節喚醒操", duration: "7:00", tags: ["活動度", "無器材"], color: "bg-indigo-100 text-indigo-600" },
-                    { title: "椅子瑜珈伸展", duration: "14:50", tags: ["瑜珈", "放鬆"], color: "bg-pink-100 text-pink-600" }
-                ],
-                plan: ["肩頸活動 10次", "脊椎扭轉伸展", "下肢關節畫圓", "全身筋膜放鬆", "休息日", "椅子瑜珈", "溫和太極"]
-            },
-            pain: {
-                videos: [
-                    { title: "腰背舒緩伸展", duration: "10:00", tags: ["舒緩", "墊上"], color: "bg-gray-100 text-gray-600" },
-                    { title: "疼痛管理與呼吸", duration: "6:00", tags: ["呼吸", "放鬆"], color: "bg-gray-100 text-gray-600" }
-                ],
-                plan: ["腹式呼吸 10分鐘", "局部熱敷與伸展", "骨盆傾斜運動", "嬰兒式伸展", "休息日", "貓牛式伸展", "全身放鬆冥想"]
-            },
-            default: {
-                videos: [
-                    { title: "全身性關節活動操", duration: "10:00", tags: ["暖身", "低強度"], color: "bg-gray-100 text-gray-600" },
-                    { title: "基礎呼吸與核心穩定", duration: "6:00", tags: ["基礎", "呼吸"], color: "bg-gray-100 text-gray-600" }
-                ],
-                plan: ["關節活動 10分鐘", "散步 20分鐘", "局部熱敷", "輕度伸展", "休息日", "散步 20分鐘", "溫和瑜珈"]
-            }
-        };
-
-        // 步驟控制邏輯
-        function goToStep2(e) {
-            e.preventDefault();
-            
-            // 儲存第一頁資料
-            globalUserData.age = document.getElementById('userAge').value;
-            globalUserData.gender = document.getElementById('userGender').value;
-            globalUserData.nyha = document.getElementById('nyhaClass').value;
-            globalUserData.baseWeight = parseFloat(document.getElementById('baseWeight').value);
-            globalUserData.goal = document.getElementById('improveGoal').value;
-            globalUserData.chronic = Array.from(document.querySelectorAll('input[name="chronic"]:checked')).map(cb => cb.nextElementSibling.innerText);
-            globalUserData.symptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(cb => cb.nextElementSibling.innerText);
-
-            // 切換畫面
-            document.getElementById('section-step-1').classList.add('hidden');
-            document.getElementById('section-step-1').classList.remove('fade-in');
-            
-            const step2 = document.getElementById('section-step-2');
-            step2.classList.remove('hidden');
-            step2.classList.add('fade-in');
-
-            // 更新進度條 UI
-            document.getElementById('step-indicator-1').classList.replace('text-blue-600', 'text-gray-400');
-            document.getElementById('step-indicator-1').children[0].classList.replace('bg-blue-100', 'bg-gray-100');
-            document.getElementById('step-indicator-1').children[0].classList.replace('border-blue-200', 'border-gray-200');
-            
-            document.getElementById('step-indicator-2').classList.replace('text-gray-400', 'text-blue-600');
-            document.getElementById('step-indicator-2').children[0].classList.replace('bg-gray-100', 'bg-blue-100');
-            document.getElementById('step-indicator-2').children[0].classList.replace('border-gray-200', 'border-blue-200');
-            
-            // 將滾動條移至最上方
-            document.querySelector('main').scrollTop = 0;
-        }
-
-        function goBackToStep1() {
-            // 切換畫面
-            document.getElementById('section-step-2').classList.add('hidden');
-            document.getElementById('section-step-2').classList.remove('fade-in');
-            
-            const step1 = document.getElementById('section-step-1');
-            step1.classList.remove('hidden');
-            step1.classList.add('fade-in');
-
-            // 更新進度條 UI 回歸
-            document.getElementById('step-indicator-2').classList.replace('text-blue-600', 'text-gray-400');
-            document.getElementById('step-indicator-2').children[0].classList.replace('bg-blue-100', 'bg-gray-100');
-            document.getElementById('step-indicator-2').children[0].classList.replace('border-blue-200', 'border-gray-200');
-            
-            document.getElementById('step-indicator-1').classList.replace('text-gray-400', 'text-blue-600');
-            document.getElementById('step-indicator-1').children[0].classList.replace('bg-gray-100', 'bg-blue-100');
-            document.getElementById('step-indicator-1').children[0].classList.replace('border-gray-200', 'border-blue-200');
-        }
-
-        // 開始分析
         function startAnalysis(e) {
             e.preventDefault();
+            // 與後端 api_server 完全對應的 key（camelCase）
+            const payload = {
+                age: globalUserData.age,
+                gender: globalUserData.gender,
+                nyhaclass: globalUserData.nyhaclass,
+                baseWeight: globalUserData.baseWeight,
+                exerciseHabit: globalUserData.exercisehabit || globalUserData.exerciseHabit,
+                improveGoal: globalUserData.improvegoal || globalUserData.improveGoal,
+                sysBP: parseInt(document.getElementById('sysBP').value, 10),
+                diaBP: parseInt(document.getElementById('diaBP').value, 10),
+                heartRate: parseInt(document.getElementById('heartRate').value, 10),
+                todayWeight: parseFloat(document.getElementById('todayWeight').value),
+                currentSymptom: document.getElementById('currentSymptom').value
+            };
+            Object.assign(globalUserData, payload);
             
-            // 獲取第二頁資料
-            globalUserData.sysBP = parseInt(document.getElementById('sysBP').value);
-            globalUserData.diaBP = parseInt(document.getElementById('diaBP').value);
-            globalUserData.heartRate = parseInt(document.getElementById('heartRate').value);
-            globalUserData.todayWeight = parseFloat(document.getElementById('todayWeight').value);
-            globalUserData.currentSymptom = document.getElementById('currentSymptom').value;
-            
-            // 切換到 Loading 狀態 (隱藏進度條與表單)
             document.getElementById('progress-container').classList.add('hidden');
             document.getElementById('section-step-2').classList.add('hidden');
             document.getElementById('section-loading').classList.remove('hidden');
             
-            // 進度條動畫
-            setTimeout(() => { document.getElementById('progress-bar').style.width = "100%"; }, 100);
-
-            // 模擬分析文字
-            const loadingTexts = ["驗證當日血壓與心跳...", "比對心臟衰竭安全性指標...", "計算最佳負荷量...", "完成分析！"];
-            let step = 0;
-            const textInterval = setInterval(() => {
-                if(step < loadingTexts.length) {
-                    document.getElementById('loading-text').innerText = loadingTexts[step];
-                    step++;
-                } else {
-                    clearInterval(textInterval);
-                }
-            }, 800);
-
-            // 延遲後顯示結果
-            setTimeout(() => {
-                generateResults();
-            }, 3200);
+            fetch(API_ENDPOINT_ANALYZE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(response => { if (!response.ok) { return response.json().then(err => { throw new Error(err.message) }); } return response.json(); })
+            .then(backendResult => generateResults(backendResult))
+            .catch(error => {
+                if(error.message && error.message.includes("異常") || error.message.includes("不建議")) {
+                     document.getElementById('section-loading').classList.add('hidden'); document.getElementById('section-results').classList.remove('hidden'); document.getElementById('dangerAlert').classList.remove('hidden'); document.getElementById('normalPlanArea').classList.add('hidden'); document.getElementById('dangerReason').innerText = "• " + error.message; document.getElementById('resultTitle').innerHTML = `<span class="text-red-600">高風險數值阻擋</span>`; document.getElementById('resultHeaderIcon').innerHTML = '<i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>'; document.getElementById('resultSummary').innerText = "為保護您的安全，今日請暫停運動並充分休息。"; lucide.createIcons();
+                } else { alert("連線失敗！請確認 api_server.py 執行中。\n" + error.message); document.getElementById('section-loading').classList.add('hidden'); document.getElementById('section-step-2').classList.remove('hidden'); }
+            });
         }
 
-        function generateResults() {
+        function startTrainingMode(videoFilename) { startStream([videoFilename]); }
+        function startFullPlaylist(videosArray) { startStream(videosArray); }
+        function startStream(videoListArray) {
+            document.getElementById('section-streaming').classList.remove('hidden');
+            document.getElementById('stream-loading').style.display = 'flex';
+            document.getElementById('ai-stream-view').src = `http://127.0.0.1:5000/video_feed?videos=${encodeURIComponent(videoListArray.join(','))}`;
+        }
+        function stopStreaming() { document.getElementById('section-streaming').classList.add('hidden'); document.getElementById('ai-stream-view').src = ""; }
+        function handleStreamError() { if(document.getElementById('section-streaming').classList.contains('hidden')) return; alert("影像串流載入失敗！請確認 Python API 正在執行"); stopStreaming(); }
+
+        function generateResults(backendData) {
             document.getElementById('section-loading').classList.add('hidden');
             document.getElementById('section-results').classList.remove('hidden');
 
-            const u = globalUserData;
-            const genderText = u.gender === 'male' ? '男' : '女';
-            const chronicText = u.chronic.length > 0 ? u.chronic.join('、') : '無';
+            document.getElementById('resultSummary').innerText = backendData.gpt_summary || "系統為您推薦以下安全課表。";
 
-            document.getElementById('resultSummary').innerHTML = `
-                年齡 ${u.age}, 性別 ${genderText}, NYHA 分級 ${u.nyha}<br>
-                <span class="text-xs text-gray-500 font-normal mt-1 inline-block">慢性病：${chronicText}</span>
-            `;
-
-            // === 醫療安全警示邏輯 (Rule-based AI) ===
-            let isDanger = false;
-            let dangerReasons = [];
-
-            // 1. 血壓判斷 (三總標準：收縮壓 > 180, 舒張壓 > 110, 或收縮壓 < 90)
-            if (u.sysBP > 180 || u.diaBP > 110) {
-                dangerReasons.push(`血壓過高 (${u.sysBP}/${u.diaBP} mmHg)`);
-            } else if (u.sysBP < 90) {
-                dangerReasons.push(`血壓偏低 (${u.sysBP}/${u.diaBP} mmHg)`);
-            }
-
-            // 2. 心跳判斷 (三總標準：休息心跳 > 120 或 < 50)
-            if (u.heartRate > 120) {
-                dangerReasons.push(`安靜心跳過速 (${u.heartRate} 次/分)`);
-            } else if (u.heartRate < 50) {
-                dangerReasons.push(`心跳過慢 (${u.heartRate} 次/分)`);
-            }
-
-            // 3. 體重與積水風險 (三總紅燈警示：增加 ≥ 2 公斤)
-            const weightDiff = u.todayWeight - u.baseWeight;
-            if (weightDiff >= 2.0) {
-                dangerReasons.push(`體重異常增加 ${weightDiff.toFixed(1)} 公斤 (可能為急性積水/肺水腫)`);
-            } else if (weightDiff >= 1.0) {
-                // 黃燈區，若伴隨症狀則強制阻擋
-                if (u.currentSymptom !== 'none') {
-                    dangerReasons.push(`體重增加 ${weightDiff.toFixed(1)} 公斤且伴隨不適，不宜運動`);
-                }
-            }
-
-            // 4. 當下症狀 (三總紅燈症狀)
-            if (u.currentSymptom === 'chest_pain' || u.currentSymptom === 'breathless') {
-                dangerReasons.push("目前有嚴重的胸悶/頭暈或休息呼吸困難 (端坐呼吸) 症狀");
-            }
-
-            // 根據安全狀態渲染畫面
-            if (dangerReasons.length > 0) {
-                // 顯示危險警告，隱藏運動計畫
-                document.getElementById('dangerAlert').classList.remove('hidden');
-                document.getElementById('normalPlanArea').classList.add('hidden');
-                document.getElementById('dangerReason').innerText = "主要危險因素：\n• " + dangerReasons.join('\n• ');
-                
-                // 更改頭部樣式
-                document.getElementById('resultHeaderCard').classList.replace('bg-blue-50', 'bg-red-50');
-                document.getElementById('resultHeaderCard').classList.replace('border-blue-100', 'border-red-200');
-                document.getElementById('resultHeaderIcon').classList.replace('bg-blue-100', 'bg-red-200');
-                document.getElementById('resultHeaderIcon').classList.replace('text-blue-600', 'text-red-600');
-                document.getElementById('resultTitle').innerHTML = `分析報告：<span class="text-red-600">偵測到高風險數值 (三總紅燈警示)</span>`;
-                document.getElementById('resultDescription').innerHTML = "AI 已終止運動推薦程序，以確保您的生命安全。";
-            } else {
-                // 數據安全，顯示運動計畫
-                const goalTextMap = {
-                    'cardio': '提升心肺功能', 'strength': '增強肌力', 
-                    'mobility': '改善關節活動度', 'pain': '減緩疼痛'
-                };
-                document.getElementById('resultGoal').innerText = goalTextMap[u.goal] || u.goal;
-
-                const data = rehabData[u.goal] || rehabData.default;
-
-                // 生成影片列表 HTML
-                const videoContainer = document.getElementById('videoList');
-                videoContainer.innerHTML = data.videos.map(v => `
-                    <div class="flex items-center gap-4 p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer group">
-                        <div class="w-24 h-16 ${v.color} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
-                            <i data-lucide="play-circle" class="w-8 h-8 opacity-80"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-gray-800 text-sm mb-1 group-hover:text-blue-600 transition">${v.title}</h4>
-                            <div class="flex gap-2 text-xs">
-                                <span class="bg-gray-100 px-2 py-0.5 rounded text-gray-600 flex items-center gap-1">
-                                    <i data-lucide="clock" class="w-3 h-3"></i> ${v.duration}
-                                </span>
-                                ${v.tags.map(tag => `<span class="bg-gray-100 px-2 py-0.5 rounded text-gray-500">#${tag}</span>`).join('')}
-                            </div>
-                        </div>
+            let videosHTML = backendData.videos.map(v => `
+                <div class="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="w-16 h-12 ${v.color} rounded flex items-center justify-center shrink-0"><i data-lucide="play-circle"></i></div>
+                        <div><h4 class="font-bold text-sm text-gray-800">${v.title}</h4>
+                        <div class="flex gap-2 text-xs mt-1">${v.tags.map(tag => `<span class="bg-gray-100 px-2 py-0.5 rounded text-gray-500">#${tag}</span>`).join('')}</div></div>
                     </div>
-                `).join('');
+                    <button onclick="startTrainingMode('${v.filename}')" class="w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg flex justify-center items-center gap-2 hover:bg-blue-600 hover:text-white transition">
+                        <i data-lucide="video" class="w-4 h-4"></i> 單曲跟練
+                    </button>
+                </div>
+            `).join('');
 
-                // 生成一週計畫 HTML
-                const planContainer = document.getElementById('weeklyPlan');
-                const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-                
-                planContainer.innerHTML = weekDays.map((day, index) => `
-                    <div class="flex relative pb-6 last:pb-0">
-                        ${index !== weekDays.length - 1 ? '<div class="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-200"></div>' : ''}
-                        
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0 z-10 border-2 border-white shadow-sm">
-                            ${index + 1}
-                        </div>
-                        <div class="ml-4 flex-1">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold text-gray-500 uppercase">${day}</span>
-                                ${data.plan[index].includes("休息") ? '<span class="text-xs bg-green-100 text-green-600 px-2 rounded-full">恢復</span>' : ''}
-                            </div>
-                            <p class="text-gray-800 text-sm font-medium bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
-                                ${data.plan[index]}
-                            </p>
-                        </div>
+            const allVideoFiles = JSON.stringify(backendData.videos.map(v => v.filename));
+            videosHTML += `<button onclick='startFullPlaylist(${allVideoFiles})' class="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-xl shadow-md flex justify-center items-center gap-2 hover:opacity-90 transition transform hover:-translate-y-0.5"><i data-lucide="layers" class="w-5 h-5"></i> 🔥 開始今日完整課表</button>`;
+            document.getElementById('videoList').innerHTML = videosHTML;
+            
+            // 【關鍵亮點】：使用美觀的時間軸 (Timeline) 渲染 GPT 傳回的 7 日計畫！
+            const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+            document.getElementById('weeklyPlan').innerHTML = weekDays.map((day, index) => {
+                let planText = backendData.plan[index] || "休息日";
+                let isRest = planText.includes("休息") || planText.includes("伸展");
+                return `
+                <div class="flex relative pb-6 last:pb-0">
+                    ${index !== weekDays.length - 1 ? '<div class="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-200"></div>' : ''}
+                    <div class="w-8 h-8 rounded-full ${isRest ? 'bg-green-100 text-green-600 border-green-200' : 'bg-blue-100 text-blue-600 border-blue-200'} flex items-center justify-center text-xs font-bold shrink-0 z-10 border-2 shadow-sm">
+                        ${index + 1}
                     </div>
-                `).join('');
-            }
+                    <div class="ml-4 flex-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-gray-500">${day}</span>
+                            ${isRest ? '<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">恢復</span>' : ''}
+                        </div>
+                        <p class="text-gray-800 text-sm font-medium bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
+                            ${planText}
+                        </p>
+                    </div>
+                </div>`;
+            }).join('');
 
-            // 重新渲染圖標
             lucide.createIcons();
         }
     </script>
