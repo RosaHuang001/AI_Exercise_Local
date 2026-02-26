@@ -94,7 +94,7 @@
         <!-- 內容區域 -->
         <main class="flex-1 p-6 relative overflow-y-auto no-scrollbar">
 
-            <!-- ================= 步驟 1：基本資料 (保留最美觀的標籤設計) ================= -->
+            <!-- ================= 步驟 1：基本資料 ================= -->
             <div id="section-step-1" class="max-w-lg mx-auto py-4 fade-in">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">建立您的專屬檔案</h2>
@@ -298,26 +298,85 @@
                 </div>
             </div>
 
-            <!-- ================= HTML 內嵌影像串流區塊 ================= -->
+            <!-- ================= HTML 內嵌影像串流區塊 (包含全新播放器UI) ================= -->
             <div id="section-streaming" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 md:p-8 backdrop-blur-sm">
-                <div class="w-full max-w-6xl bg-gray-900 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col h-[85vh] border border-gray-700">
-                    <div class="bg-gray-800 p-4 flex justify-between items-center text-white border-b border-gray-700 shrink-0">
-                        <div class="flex items-center gap-3">
+                <!-- 黑底容器 -->
+                <div class="w-full max-w-6xl bg-[#0f0f0f] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col h-[85vh] border border-gray-800">
+                    
+                    <!-- 頂部標題列 (保留原本的結束按鈕) -->
+                    <div class="bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center text-white absolute top-0 left-0 w-full z-30 pointer-events-none">
+                        <div class="flex items-center gap-3 drop-shadow-md">
                             <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                            <h3 class="font-bold text-lg">AI 雙畫面即時跟練</h3>
+                            <h3 class="font-bold text-lg tracking-wider">AI 即時跟練</h3>
                         </div>
-                        <button onclick="stopStreaming()" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-xl font-bold text-sm transition shadow flex items-center gap-2">
+                        <button onclick="stopStreaming()" class="pointer-events-auto bg-red-600/90 hover:bg-red-600 px-5 py-2 rounded-lg font-bold text-sm transition shadow flex items-center gap-2 backdrop-blur">
                             <i data-lucide="x-circle" class="w-4 h-4"></i>
                             結束訓練
                         </button>
                     </div>
+
+                    <!-- 影像直播區 -->
                     <div class="flex-1 bg-black flex items-center justify-center relative w-full overflow-hidden">
                         <div id="stream-loading" class="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
                             <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-blue-500 mb-4"></i>
-                            <p class="text-lg font-medium">正在啟動攝影機與 AI 模型...</p>
-                            <p class="text-sm text-gray-400 mt-2">首次載入可能需要幾秒鐘</p>
+                            <p class="text-lg font-medium tracking-widest">載入 AI 模型與攝影機中...</p>
                         </div>
                         <img id="ai-stream-view" class="w-full h-full object-contain relative z-20" onload="document.getElementById('stream-loading').style.display='none'" onerror="handleStreamError()" />
+                    </div>
+
+                    <!-- 【全新加入】底部高質感播放器控制列 -->
+                    <div class="bg-[#181818] px-6 py-4 border-t border-gray-800 flex flex-col gap-3 shrink-0 select-none z-30">
+                        <!-- 進度條 -->
+                        <div class="w-full flex items-center gap-4">
+                            <div class="flex-1 h-1.5 bg-gray-700 rounded-full relative cursor-pointer group">
+                                <!-- 橘色進度線 (模擬跑動) -->
+                                <div class="absolute left-0 top-0 h-full bg-orange-500 rounded-full w-full opacity-60 animate-pulse"></div>
+                                <!-- 把手圓點 -->
+                                <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.8)]"></div>
+                            </div>
+                        </div>
+
+                        <!-- 播放按鈕群 (完美還原您的截圖設計) -->
+                        <div class="flex items-center justify-center gap-8 text-gray-300 mt-1">
+                            <!-- 隨機播放 -->
+                            <button class="hover:text-white transition opacity-50" title="隨機播放" onclick="playerFeatureAlert('隨機播放')">
+                                <i data-lucide="shuffle" class="w-5 h-5"></i>
+                            </button>
+                            
+                            <!-- 上一首 -->
+                            <button class="hover:text-white transition" title="上一首" onclick="playerFeatureAlert('上一首')">
+                                <i data-lucide="skip-back" class="w-6 h-6 fill-current"></i>
+                            </button>
+                            
+                            <!-- 慢速播放 (0.5x) 取代原本的倒轉 -->
+                            <button class="hover:text-white transition flex flex-col items-center justify-center" title="慢速動作 (0.5x)" onclick="playerFeatureAlert('慢速動作 (0.5x)')">
+                                <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center hover:shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-shadow">
+                                    <span class="text-[11px] font-bold">.5x</span>
+                                </div>
+                            </button>
+
+                            <!-- 暫停/播放 (橘色外圈大按鈕) -->
+                            <button class="w-14 h-14 rounded-full border-[2px] border-orange-500 bg-[#222] text-white flex items-center justify-center hover:scale-105 hover:bg-orange-500 transition-all shadow-lg group" onclick="playerFeatureAlert('暫停/播放')">
+                                <i data-lucide="pause" class="w-6 h-6 fill-current"></i>
+                            </button>
+
+                            <!-- 原速播放 (1.0x) 取代原本的快轉 -->
+                            <button class="hover:text-white transition flex flex-col items-center justify-center" title="原速動作 (1.0x)" onclick="playerFeatureAlert('原速動作 (1.0x)')">
+                                <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center hover:shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-shadow">
+                                    <span class="text-[11px] font-bold">1x</span>
+                                </div>
+                            </button>
+                            
+                            <!-- 下一首 -->
+                            <button class="hover:text-white transition" title="下一首" onclick="playerFeatureAlert('下一首')">
+                                <i data-lucide="skip-forward" class="w-6 h-6 fill-current"></i>
+                            </button>
+                            
+                            <!-- 重複播放 -->
+                            <button class="hover:text-white transition opacity-50" title="重複播放" onclick="playerFeatureAlert('重複播放')">
+                                <i data-lucide="repeat" class="w-5 h-5"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -406,7 +465,7 @@
         document.getElementById('current-date').innerText = new Date().toISOString().split('T')[0];
         let globalUserData = {};
 
-        // 多選標籤的互動邏輯：確保必填驗證與排他性（選「無」時清除其他選項）
+        // 多選標籤的互動邏輯：確保必填驗證與排他性
         function updateCheckboxRequirement() {
             const groups = ['chronic', 'surgery', 'symptoms'];
             groups.forEach(group => {
@@ -431,7 +490,7 @@
         updateCheckboxRequirement();
 
 
-        // 【修復核心】：在跳轉到步驟二時，完整收集標籤資料
+        // 切換到步驟二
         function goToStep2(e) {
             e.preventDefault();
             globalUserData.age = document.getElementById('userAge').value;
@@ -441,7 +500,7 @@
             globalUserData.exerciseHabit = document.getElementById('exerciseHabit').value;
             globalUserData.improveGoal = document.getElementById('improveGoal').value;
             
-            // 收集多選標籤（過濾掉"無"）
+            // 收集多選標籤
             globalUserData.chronic = Array.from(document.querySelectorAll('input[name="chronic"]:checked'))
                 .map(cb => cb.nextElementSibling.innerText.trim()).filter(t => t !== '無');
             globalUserData.surgery = Array.from(document.querySelectorAll('input[name="surgery"]:checked'))
@@ -449,7 +508,6 @@
             globalUserData.symptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked'))
                 .map(cb => cb.nextElementSibling.innerText.trim()).filter(t => t !== '無');
 
-            // 畫面切換
             document.getElementById('section-step-1').classList.add('hidden');
             document.getElementById('section-step-1').classList.remove('fade-in');
             const step2 = document.getElementById('section-step-2');
@@ -480,11 +538,10 @@
             document.getElementById('step-indicator-1').children[0].classList.replace('border-gray-200', 'border-blue-200');
         }
 
-        // 送出完整 Payload 給後端 API
+        // 送出資料給後端 API
         function startAnalysis(e) {
             e.preventDefault();
             
-            // 將步驟二的資料包裝在一起
             const payload = {
                 ...globalUserData,
                 sysBP: parseInt(document.getElementById('sysBP').value, 10),
@@ -498,7 +555,6 @@
             document.getElementById('section-step-2').classList.add('hidden');
             document.getElementById('section-loading').classList.remove('hidden');
             
-            // 動畫進度條
             setTimeout(() => { document.getElementById('progress-bar').style.width = "100%"; }, 100);
             let step = 0;
             const loadingTexts = ["連線至 AI 模組...", "套用 ACSM 醫學指引...", "驗證血壓與心跳安全...", "生成推薦課表..."];
@@ -536,7 +592,7 @@
                      document.getElementById('goalBadge').classList.add('hidden');
                      lucide.createIcons();
                 } else { 
-                     alert("連線失敗！請確認後端 api_server.py 執行中。\n" + error.message); 
+                     alert("連線失敗！請確認地端 api_server.py 執行中。\n" + error.message); 
                      document.getElementById('section-loading').classList.add('hidden'); 
                      document.getElementById('section-step-2').classList.remove('hidden'); 
                 }
@@ -563,6 +619,11 @@
             stopStreaming(); 
         }
 
+        // 專為展示 UI 加入的互動提醒 (提示底層是 AI 串流)
+        function playerFeatureAlert(featureName) {
+            alert(`【${featureName}】功能已預留播放器 UI 介面。\n\n註：由於目前播放的不是一般影片，而是「AI 骨架即時運算串流 (Live Stream)」，底層正與攝影機同步運算中。未來若需支援調整播放速度，將透過後端 API 控制影像幀率。\n若需停止跟練，請點擊右上角「結束訓練」。`);
+        }
+
         // ==========================================
         // 渲染結果畫面
         // ==========================================
@@ -574,13 +635,16 @@
             document.getElementById('resultGoal').innerText = goalTextMap[globalUserData.improveGoal] || "健康促進";
             document.getElementById('resultSummary').innerText = backendData.gpt_summary || "系統為您推薦以下安全課表。";
 
-            // 渲染推薦影片清單
             let videosHTML = backendData.videos.map(v => `
                 <div class="p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition group">
                     <div class="flex items-center gap-4 mb-3">
-                        <div class="w-20 h-16 ${v.color || 'bg-blue-100 text-blue-600'} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition">
-                            <i data-lucide="play-circle" class="w-8 h-8 opacity-80"></i>
+                        <div class="relative w-28 h-16 rounded-lg overflow-hidden flex-shrink-0 group-hover:scale-105 transition shadow-sm bg-gray-200 border border-gray-100">
+                            <video src="${v.filename}#t=0.1" class="absolute inset-0 w-full h-full object-cover" preload="metadata" muted playsinline></video>
+                            <div class="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/40 transition-colors">
+                                <i data-lucide="play-circle" class="w-8 h-8 text-white opacity-90 drop-shadow-md"></i>
+                            </div>
                         </div>
+
                         <div class="flex-1">
                             <h4 class="font-bold text-gray-800 text-sm mb-1 group-hover:text-blue-600 transition">${v.title}</h4>
                             <div class="flex gap-2 text-xs mt-1 flex-wrap">
@@ -588,6 +652,14 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="mb-3 px-3 py-2 bg-indigo-50/40 rounded-lg text-[13px] text-gray-600 flex items-start gap-2 border border-indigo-50/50">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+                        <p class="leading-relaxed">
+                            ${v.tip || "請依個人節奏進行，保持呼吸平穩，若感到關節不適請立即暫停。"}
+                        </p>
+                    </div>
+
                     <button onclick="startTrainingMode('${v.filename}')" class="w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white font-bold py-2 rounded-lg transition text-sm flex justify-center items-center gap-2">
                         <i data-lucide="video" class="w-4 h-4"></i> 單曲跟練
                     </button>
@@ -600,7 +672,6 @@
             </button>`;
             document.getElementById('videoList').innerHTML = videosHTML;
             
-            // 渲染精美直列時間軸 7 日計畫
             const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
             document.getElementById('weeklyPlan').innerHTML = weekDays.map((day, index) => {
                 let planText = backendData.plan[index] || "休息日";

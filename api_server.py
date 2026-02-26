@@ -21,54 +21,23 @@ from modules.recommender_filter import (
     soft_rank_exercises
 )
 
-# 【新增】引入 GPT 模組的 OpenAI 客戶端
+# 【架構升級】直接從 gpt_summary.py 引入寫好的生成函數，不在這裡寫 Prompt！
 try:
-    from modules.gpt_summary import openai_client, OPENAI_MODEL
+    from modules.gpt_summary import generate_today_summary, generate_7_day_plan
 except ImportError:
-    openai_client = None
-    OPENAI_MODEL = "gpt-4o"
+    # 萬一 gpt_summary 模組遺失的防呆機制
+    print("⚠️ 警告：無法載入 gpt_summary 模組，將使用預設文字。")
+    def generate_today_summary(*args): return "系統已依據狀況為您安排課表。"
+    def generate_7_day_plan(*args): return ["預設動作"] * 7
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ==========================================
-# 輔助函數：生成 GPT 完整課表總說明
-# ==========================================
-def generate_today_summary(user_condition, risk_assessment, selected_exercises):
-    """將選出的多個動作打包，請 GPT 產生一段給病患的綜合說明"""
-    if not openai_client:
-        return "【系統提醒】本課表已依據您的狀況進行個人化調整，請量力而為。若有任何不適請立即停止運動。"
-
-    ex_names = [ex.get('name_zh', '復健運動') for ex in selected_exercises]
-    nyha = user_condition.get("nyha", "未知")
-    risk = risk_assessment.get("risk_level", "中等")
-
-    prompt = f"""你是一位充滿同理心的復健指導員。
-病患目前狀況：心臟衰竭 NYHA {nyha} 分級，系統風險評估為 {risk}。
-系統剛剛為他安排了今日的「連續跟練影片課表」，包含以下動作串聯：{', '.join(ex_names)}。
-
-任務：
-請用 3~4 句溫暖、白話的文字，向病患總結「這整套課表」的重點。
-告訴病患這套動作主要鍛鍊哪裡、整體的強度感受，以及安全提醒（例如何時該暫停）。
-絕對不要列點，不要使用醫學術語，請直接輸出一段自然流暢的口語說明。"""
-
-    try:
-        resp = openai_client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
-            timeout=15
-        )
-        return resp.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"GPT 總說明生成失敗: {e}")
-        return "【系統提醒】本課表已依據您的狀況進行個人化調整，請量力而為。若有任何不適請立即停止運動。"
 
 # ==========================================
 # 資料格式轉換（與前端 rehab_app.html 完全對應）
-# 前端送出: age, gender, nyhaclass, baseWeight, exerciseHabit, improveGoal, sysBP, diaBP, heartRate, todayWeight, currentSymptom
 # ==========================================
 def _get(ui_data, *keys):
     """取第一個存在的 key（前後端對應，可混用 camelCase / snake_case）"""
@@ -200,24 +169,12 @@ def analyze_data():
         filtered = hard_filter_exercises(user_state, exercise_library)
         ranked_exercises = soft_rank_exercises(user_state, filtered["included"])
         
-        # --- 步驟 D：將結果包裝成網頁需要的 JSON 格式（與前端完全對應）---
+        # --- 步驟 D：將結果包裝成網頁需要的 JSON 格式 ---
         videos_for_html = []
         color_themes = ["bg-blue-100 text-blue-600", "bg-green-100 text-green-600", "bg-purple-100 text-purple-600", "bg-orange-100 text-orange-600"]
         
         selected_top_4 = ranked_exercises[:4]
-        action_descriptions = [f"動作 {idx+1}：{ex.get('name_zh', ex['exercise_id'])} (建議 {ex.get('intensity_band', '適度')} 強度)" for idx, ex in enumerate(selected_top_4)]
         
-        # 一週課表固定 7 筆，對應前端週一～週日 (plan[0]..plan[6])
-        plan_for_html = [
-            f"依據您的 NYHA {user_state.nyha} 分級與身體狀況，今日建議：",
-            action_descriptions[0] if len(action_descriptions) > 0 else "溫和活動",
-            action_descriptions[1] if len(action_descriptions) > 1 else "休息或伸展",
-            action_descriptions[2] if len(action_descriptions) > 2 else "休息或伸展",
-            action_descriptions[3] if len(action_descriptions) > 3 else "休息或伸展",
-            "休息日（恢復）",
-            "休息日（恢復）"
-        ]
-
         for idx, ex in enumerate(selected_top_4):
             ex_id = ex["exercise_id"]
             title_zh = ex.get("name_zh", ex_id)
@@ -235,7 +192,8 @@ def analyze_data():
                     "filename": vid_path,
                     "duration": "0:30", 
                     "tags": [f"NYHA {user_state.nyha}", ex.get("impact_level", "安全")],
-                    "color": color_themes[idx % len(color_themes)]
+                    "color": color_themes[idx % len(color_themes)],
+                    "tip": ex.get("gpt_safety_tip") or ex.get("gpt_risk_notice") or "請依個人節奏進行，保持呼吸平穩，若感到關節不適請立即暫停。"
                 })
             
         if not videos_for_html:
@@ -247,9 +205,10 @@ def analyze_data():
                 "color": "bg-gray-100 text-gray-600"
             })
 
-        # --- 步驟 E：產生 GPT 總說明 ---
-        print("💬 [4] 正在請求 GPT 生成今日課表總說明...")
+        # --- 步驟 E：把生成工作外包給 gpt_summary.py ---
+        print("💬 [4] 正在請求 GPT 生成今日課表總說明與 7 日計畫...")
         gpt_summary_text = generate_today_summary(user_condition, risk_assessment, selected_top_4)
+        gpt_weekly_plan = generate_7_day_plan(user_condition, risk_assessment, selected_top_4)
 
         print(f"✅ [5] 成功推薦 {len(videos_for_html)} 部專屬影片與摘要，準備回傳給網頁！\n")
         
@@ -257,8 +216,8 @@ def analyze_data():
             "status": "success",
             "message": "評估分析完成",
             "videos": videos_for_html,
-            "plan": plan_for_html,
-            "gpt_summary": gpt_summary_text  # 將 GPT 總摘要傳給前端
+            "plan": gpt_weekly_plan,
+            "gpt_summary": gpt_summary_text
         })
         
     except Exception as e:
