@@ -178,7 +178,6 @@ def analyze_data():
         for idx, ex in enumerate(selected_top_4):
             ex_id = ex["exercise_id"]
             title_zh = ex.get("name_zh", ex_id)
-            score = ex.get("soft_rank_score", 0)
             
             raw_vids = video_map.get(ex_id)
             filenames = [raw_vids] if isinstance(raw_vids, str) else (raw_vids if isinstance(raw_vids, list) else [])
@@ -188,7 +187,8 @@ def analyze_data():
                 vid_path = f"exercise_videos/{f_name}" if not f_name.startswith("exercise_videos") else f_name
                 
                 videos_for_html.append({
-                    "title": f"{title_zh} (AI評分:{score})",
+                    # 🔥 關鍵修改：移除了後面的 (AI評分:{score})，保持畫面乾淨專業
+                    "title": title_zh,
                     "filename": vid_path,
                     "duration": "0:30", 
                     "tags": [f"NYHA {user_state.nyha}", ex.get("impact_level", "安全")],
@@ -202,7 +202,8 @@ def analyze_data():
                 "filename": "exercise_videos/單邊抬腳.mp4",
                 "duration": "10:00",
                 "tags": ["安全", "舒緩"],
-                "color": "bg-gray-100 text-gray-600"
+                "color": "bg-gray-100 text-gray-600",
+                "tip": "請依個人節奏進行，保持呼吸平穩，若感到關節不適請立即暫停。"
             })
 
         # --- 步驟 E：把生成工作外包給 gpt_summary.py ---

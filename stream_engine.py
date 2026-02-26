@@ -5,8 +5,6 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from scipy.signal import find_peaks
-from scipy.spatial.distance import euclidean
-from fastdtw import fastdtw
 from PIL import Image, ImageDraw, ImageFont
 
 # =========================
@@ -19,17 +17,18 @@ _font_cache = {}
 MODEL_PATH = os.path.join(_SCRIPT_DIR, "yolo11n-pose.pt")
 DISPLAY_W, DISPLAY_H = 1280, 720
 INNER_HEIGHT = 480
+HALF_W = DISPLAY_W // 2  # 1:1 畫面分配，左右各 640px
 BACKGROUND_COLOR = (25, 25, 25)
 FLIP_USER_VIEW = True
-SMOOTH_FACTOR = 0.08
 END_HOLD_SECONDS = 3.0
 REST_DURATION = 5.0
 
+# 峰值計算參數 (計算次數用)
 MAX_SERIES_LEN = 300
 PEAK_DISTANCE, PEAK_PROMINENCE = 20, 5
-DTW_MIN_LEN = 30
-DTW_SCORE_SCALE, DTW_SCORE_BIAS = 5.0, 100.0
-DTW_SMOOTH_MINLEN = 10
+
+# 🔥 [效能優化參數] 
+YOLO_IMGSZ = 320  
 
 # =========================
 # 工具函式
@@ -80,25 +79,32 @@ def calculate_angle(a, b, c):
     if norm_ba == 0 or norm_bc == 0: return None
     return float(np.degrees(np.arccos(np.clip(np.dot(ba, bc) / (norm_ba * norm_bc), -1.0, 1.0))))
 
-def draw_score_circle(img, center, radius, score):
-    score = float(np.clip(score, 0, 100))
-    color = (0, 200, 0) if score >= 80 else (0, 180, 255) if score >= 60 else (0, 0, 255)
-    cv2.circle(img, center, radius, (60, 60, 60), 8)
-    cv2.ellipse(img, center, (radius, radius), -90, 0, int(360 * score / 100), color, 8)
-    text = f"{int(score)}"
-    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 3)
-    cv2.putText(img, text, (int(center[0] - tw / 2), int(center[1] + th / 2)), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3, cv2.LINE_AA)
-
 def draw_progress_bar(img, progress):
     progress = float(np.clip(progress, 0, 1))
-    bar_w, bar_x, bar_y, bar_h = int(DISPLAY_W * 0.7), int(DISPLAY_W * 0.15), DISPLAY_H - 60, 12
+    bar_w, bar_x, bar_y, bar_h = int(DISPLAY_W * 0.7), int(DISPLAY_W * 0.15), DISPLAY_H - 40, 8
     cv2.rectangle(img, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (60, 60, 60), -1)
-    cv2.rectangle(img, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + bar_h), (255, 255, 255), -1)
+    cv2.rectangle(img, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + bar_h), (255, 150, 0), -1)
 
-def safe_resize_to_height(img, target_h):
+def crop_and_resize(img, target_w, target_h):
+    """【新增】確保畫面完美 1:1 的智慧裁切與縮放"""
+    if img is None or img.size == 0:
+        return np.zeros((target_h, target_w, 3), dtype=np.uint8)
     h, w = img.shape[:2]
-    if h <= 0: return img
-    return cv2.resize(img, (max(1, int(w * (target_h / h))), target_h))
+    img_aspect = w / h
+    target_aspect = target_w / target_h
+    
+    if img_aspect > target_aspect:
+        # 圖片太寬，裁切左右
+        new_w = int(h * target_aspect)
+        offset = (w - new_w) // 2
+        cropped = img[:, offset:offset+new_w]
+    else:
+        # 圖片太高，裁切上下
+        new_h = int(w / target_aspect)
+        offset = (h - new_h) // 2
+        cropped = img[offset:offset+new_h, :]
+        
+    return cv2.resize(cropped, (target_w, target_h))
 
 def extract_right_knee_angle_from_results(results_obj):
     try:
@@ -108,14 +114,6 @@ def extract_right_knee_angle_from_results(results_obj):
         if pts.shape[0] < 17: return None
         return calculate_angle(pts[12], pts[14], pts[16])
     except: return None
-
-def compute_dtw_similarity(r_ref, r_user):
-    if len(r_ref) == 0 or len(r_user) == 0: return 0.0
-    L = min(len(r_ref), len(r_user))
-    if L <= 1: return 0.0
-    distance, _ = fastdtw(r_ref, r_user, dist=euclidean)
-    score = max(0.0, DTW_SCORE_BIAS - (float(distance) / (L + 1e-6)) * DTW_SCORE_SCALE)
-    return float(np.clip(score, 0, 100))
 
 # =========================
 # 核心串流產生器 (Yield Generator)
@@ -137,52 +135,42 @@ def generate_frames(playlist):
     
     is_resting = False
     rest_start_time = 0
-    reference_series, user_series = [], []
-    similarity_score = display_similarity = display_score = 0.0
+    user_series = []
     total_reps, current_reps = 0, 0
-    sim_sum, sim_count = 0.0, 0
 
     session_end_flag = False
     session_end_time = None
 
     try:
         while True:
+            # 1. 讀取並處理使用者畫面 (跑 YOLO)
             ret_user, frame_user = cap_user.read()
             if not ret_user: break
             if FLIP_USER_VIEW: frame_user = cv2.flip(frame_user, 1)
 
-            user_results = model(frame_user, verbose=False)
-            frame_user_pose = user_results[0].plot()
+            user_results = model(frame_user, verbose=False, imgsz=YOLO_IMGSZ)
+            # 🔥 關鍵修改：加上 boxes=False, labels=False，不畫外框與文字，只畫骨架！
+            frame_user_pose = user_results[0].plot(boxes=False, labels=False)
             user_angle = extract_right_knee_angle_from_results(user_results[0])
 
-            real_score = 0.0
-            feedback_text = "請開始動作"
-
             if is_resting:
+                # 休息狀態：左側黑畫面
                 rest_elapsed = time.time() - rest_start_time
                 remain = max(0, REST_DURATION - rest_elapsed)
                 
-                frame_ref_pose = np.zeros((INNER_HEIGHT, int(INNER_HEIGHT*16/9), 3), dtype=np.uint8)
-                put_chinese_text(frame_ref_pose, f"休息時間: {int(remain)} 秒", (150, 200), 40, (0, 255, 255))
+                frame_ref_display = np.zeros((INNER_HEIGHT, HALF_W, 3), dtype=np.uint8)
+                put_chinese_text(frame_ref_display, f"休息時間: {int(remain)} 秒", (HALF_W//2 - 120, INNER_HEIGHT//2), 40, (0, 255, 255))
                 
-                if current_vid_idx + 1 < len(playlist):
-                    next_vid_name = os.path.basename(playlist[current_vid_idx + 1])
-                    put_chinese_text(frame_ref_pose, f"下一個動作準備：", (150, 280), 26, (200, 200, 200))
-                    put_chinese_text(frame_ref_pose, next_vid_name, (150, 330), 22, (255, 255, 255))
-
-                feedback_text = "中場休息，請調節呼吸"
-                display_score += (0 - display_score) * SMOOTH_FACTOR
-
                 if remain <= 0:
                     is_resting = False
                     current_vid_idx += 1
                     cap_ref = cv2.VideoCapture(playlist[current_vid_idx])
-                    reference_series.clear()
                     user_series.clear()
                     total_reps += current_reps
                     current_reps = 0
                     continue
             else:
+                # 2. 讀取示範影片 (不跑 YOLO，大幅提升效能！)
                 ret_ref, frame_ref = cap_ref.read()
                 if not ret_ref:
                     if current_vid_idx < len(playlist) - 1:
@@ -195,15 +183,12 @@ def generate_frames(playlist):
                             total_reps += current_reps
                             session_end_flag = True
                             session_end_time = time.time()
-                        frame_ref_pose = np.zeros((INNER_HEIGHT, int(INNER_HEIGHT*16/9), 3), dtype=np.uint8)
+                        frame_ref_display = np.zeros((INNER_HEIGHT, HALF_W, 3), dtype=np.uint8)
                 else:
-                    ref_results = model(frame_ref, verbose=False)
-                    frame_ref_pose = ref_results[0].plot()
-                    ref_angle = extract_right_knee_angle_from_results(ref_results[0])
-                    if ref_angle is not None:
-                        reference_series.append(float(ref_angle))
-                        if len(reference_series) > MAX_SERIES_LEN: reference_series.pop(0)
-
+                    # 直接使用影片原畫面
+                    frame_ref_display = frame_ref
+                    
+                    # 使用者次數計算
                     if user_angle is not None:
                         user_series.append(float(user_angle))
                         if len(user_series) > MAX_SERIES_LEN: user_series.pop(0)
@@ -212,66 +197,56 @@ def generate_frames(playlist):
                             peaks, _ = find_peaks(-arr, distance=PEAK_DISTANCE, prominence=PEAK_PROMINENCE)
                             current_reps = int(len(peaks))
 
-                    if (len(reference_series) >= DTW_SMOOTH_MINLEN) and (len(user_series) >= DTW_MIN_LEN):
-                        L = min(len(reference_series), len(user_series), MAX_SERIES_LEN)
-                        similarity_score = compute_dtw_similarity(reference_series[-L:], user_series[-L:])
-                        sim_sum += float(similarity_score)
-                        sim_count += 1
-                        real_score = similarity_score
+            # 3. 畫面 1:1 完美裁切與合成
+            frame_ref_crop = crop_and_resize(frame_ref_display, HALF_W, INNER_HEIGHT)
+            frame_user_crop = crop_and_resize(frame_user_pose, HALF_W, INNER_HEIGHT)
 
-                        if similarity_score >= 80: feedback_text = "動作符合示範"
-                        elif similarity_score >= 60: feedback_text = "動作不錯，再穩定一點"
-                        else: feedback_text = "動作差距較大，請調整"
-                    else:
-                        feedback_text = "示範模板建立中..." if len(reference_series) < DTW_SMOOTH_MINLEN else "請跟著動作..."
+            # 加上左右視角標籤
+            put_chinese_text(frame_ref_crop, " 教練示範 ", (20, 50), 24, (255, 255, 255), thickness=2)
+            put_chinese_text(frame_user_crop, " 您的畫面 ", (20, 50), 24, (255, 255, 255), thickness=2)
 
-                    display_score += (real_score - display_score) * SMOOTH_FACTOR
-                    display_similarity += (similarity_score - display_similarity) * SMOOTH_FACTOR
+            # 左右拼接，寬度剛好 = DISPLAY_W (1280)
+            combined = np.hstack([frame_ref_crop, frame_user_crop])
 
-            frame_ref_pose = safe_resize_to_height(frame_ref_pose, INNER_HEIGHT)
-            frame_user_pose = safe_resize_to_height(frame_user_pose, INNER_HEIGHT)
-            combined = np.hstack([frame_ref_pose, frame_user_pose])
-
+            # 4. 繪製總畫布
             canvas = np.full((DISPLAY_H, DISPLAY_W, 3), BACKGROUND_COLOR, dtype=np.uint8)
-            h_c, w_c = combined.shape[:2]
-            offset_x, offset_y = max(0, (DISPLAY_W - w_c) // 2), 80
-            x1, y1 = min(DISPLAY_W, offset_x + w_c), min(DISPLAY_H, offset_y + h_c)
-            canvas[offset_y:y1, offset_x:x1] = combined[:(y1 - offset_y), :(x1 - offset_x)]
+            offset_y = 80
+            canvas[offset_y:offset_y+INNER_HEIGHT, 0:DISPLAY_W] = combined
 
-            curr_vid_name = os.path.basename(playlist[current_vid_idx]) if not session_end_flag else "完成"
+            # 頂部資訊
+            curr_vid_name = os.path.basename(playlist[current_vid_idx]) if not session_end_flag else "訓練完成"
             put_chinese_text(canvas, f"AI 智慧跟練 (動作 {current_vid_idx+1}/{len(playlist)})", (40, 50), 26, (255, 255, 255))
-            put_chinese_text(canvas, f"當前動作：{curr_vid_name}", (40, 80), 18, (180, 180, 180), thickness=1)
+            put_chinese_text(canvas, f"當前動作：{curr_vid_name}", (400, 50), 22, (200, 200, 200), thickness=1)
 
-            draw_score_circle(canvas, (1100, 200), 60, display_score)
-            put_chinese_text(canvas, "動作回饋：", (40, 600), 22, (200, 200, 200))
-            put_chinese_text(canvas, feedback_text, (180, 600), 22, (255, 255, 255))
-            put_chinese_text(canvas, f"動作相似度: {int(display_similarity)}%", (900, 350), 22, (255, 255, 255))
-            put_chinese_text(canvas, f"總完成次數: {total_reps + current_reps}", (900, 400), 22, (0, 200, 255))
+            # 底部資訊：專注於達標次數
+            if not session_end_flag:
+                if is_resting:
+                    put_chinese_text(canvas, "請調節呼吸，準備下一個動作", (DISPLAY_W // 2 - 200, 640), 32, (200, 200, 200))
+                else:
+                    put_chinese_text(canvas, f"目前累積達標：{total_reps + current_reps} 次", (DISPLAY_W // 2 - 200, 640), 40, (0, 200, 255), thickness=2)
 
+            # 進度條
             progress = (current_vid_idx + (0.5 if is_resting else 0)) / len(playlist)
             if session_end_flag: progress = 1.0
             draw_progress_bar(canvas, progress)
 
+            # 結算畫面
             if session_end_flag:
                 cv2.rectangle(canvas, (300, 200), (980, 520), (20, 20, 20), -1)
-                put_chinese_text(canvas, "今日完整課表訓練完成！", (450, 260), 34, (255, 255, 255))
-                avg_sim = (sim_sum / (sim_count + 1e-6)) if sim_count > 0 else 0.0
-                put_chinese_text(canvas, f"整體平均相似度: {int(avg_sim)}%", (480, 340), 26, (0, 255, 0))
-                put_chinese_text(canvas, f"總累計完成次數: {total_reps}", (500, 390), 26, (0, 200, 255))
+                put_chinese_text(canvas, "今日完整課表訓練完成！", (450, 280), 34, (255, 255, 255))
+                put_chinese_text(canvas, f"總累計達標：{total_reps} 次", (500, 380), 36, (0, 200, 255), thickness=2)
 
-            # === 關鍵：將 OpenCV 畫布轉換為 JPG 串流發送給網頁 ===
-            ret, buffer = cv2.imencode('.jpg', canvas)
+            # 5. 轉換為 JPG 串流發送
+            ret, buffer = cv2.imencode('.jpg', canvas, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             if not ret: continue
             frame_bytes = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             
-            # 如果訓練結束並停留了 3 秒，就自動關閉串流
             if session_end_flag and (time.time() - session_end_time) >= END_HOLD_SECONDS:
                 break
 
     except GeneratorExit:
-        # 當網頁被關閉或使用者按下「結束訓練」時，觸發此處安全關閉攝影機
         print("串流已中斷，安全釋放攝影機")
     finally:
         cap_user.release()

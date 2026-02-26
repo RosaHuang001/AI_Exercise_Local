@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三總心臟衰竭復健系統</title>
+    <title>心臟衰竭復健運動推薦系統</title>
     <!-- 引入 Tailwind CSS 進行快速排版與美化 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Lucide Icons 用於圖標 -->
@@ -303,7 +303,7 @@
                 <!-- 黑底容器 -->
                 <div class="w-full max-w-6xl bg-[#0f0f0f] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col h-[85vh] border border-gray-800">
                     
-                    <!-- 頂部標題列 (保留原本的結束按鈕) -->
+                    <!-- 頂部標題列 -->
                     <div class="bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center text-white absolute top-0 left-0 w-full z-30 pointer-events-none">
                         <div class="flex items-center gap-3 drop-shadow-md">
                             <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
@@ -324,55 +324,46 @@
                         <img id="ai-stream-view" class="w-full h-full object-contain relative z-20" onload="document.getElementById('stream-loading').style.display='none'" onerror="handleStreamError()" />
                     </div>
 
-                    <!-- 【全新加入】底部高質感播放器控制列 -->
+                    <!-- 底部高質感播放器控制列 -->
                     <div class="bg-[#181818] px-6 py-4 border-t border-gray-800 flex flex-col gap-3 shrink-0 select-none z-30">
                         <!-- 進度條 -->
                         <div class="w-full flex items-center gap-4">
                             <div class="flex-1 h-1.5 bg-gray-700 rounded-full relative cursor-pointer group">
-                                <!-- 橘色進度線 (模擬跑動) -->
                                 <div class="absolute left-0 top-0 h-full bg-orange-500 rounded-full w-full opacity-60 animate-pulse"></div>
-                                <!-- 把手圓點 -->
                                 <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.8)]"></div>
                             </div>
                         </div>
 
-                        <!-- 播放按鈕群 (完美還原您的截圖設計) -->
+                        <!-- 播放按鈕群 (加入 .5x 與 1x) -->
                         <div class="flex items-center justify-center gap-8 text-gray-300 mt-1">
-                            <!-- 隨機播放 -->
                             <button class="hover:text-white transition opacity-50" title="隨機播放" onclick="playerFeatureAlert('隨機播放')">
                                 <i data-lucide="shuffle" class="w-5 h-5"></i>
                             </button>
                             
-                            <!-- 上一首 -->
                             <button class="hover:text-white transition" title="上一首" onclick="playerFeatureAlert('上一首')">
                                 <i data-lucide="skip-back" class="w-6 h-6 fill-current"></i>
                             </button>
                             
-                            <!-- 慢速播放 (0.5x) 取代原本的倒轉 -->
                             <button class="hover:text-white transition flex flex-col items-center justify-center" title="慢速動作 (0.5x)" onclick="playerFeatureAlert('慢速動作 (0.5x)')">
                                 <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center hover:shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-shadow">
                                     <span class="text-[11px] font-bold">.5x</span>
                                 </div>
                             </button>
 
-                            <!-- 暫停/播放 (橘色外圈大按鈕) -->
                             <button class="w-14 h-14 rounded-full border-[2px] border-orange-500 bg-[#222] text-white flex items-center justify-center hover:scale-105 hover:bg-orange-500 transition-all shadow-lg group" onclick="playerFeatureAlert('暫停/播放')">
                                 <i data-lucide="pause" class="w-6 h-6 fill-current"></i>
                             </button>
 
-                            <!-- 原速播放 (1.0x) 取代原本的快轉 -->
                             <button class="hover:text-white transition flex flex-col items-center justify-center" title="原速動作 (1.0x)" onclick="playerFeatureAlert('原速動作 (1.0x)')">
                                 <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center hover:shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-shadow">
                                     <span class="text-[11px] font-bold">1x</span>
                                 </div>
                             </button>
                             
-                            <!-- 下一首 -->
                             <button class="hover:text-white transition" title="下一首" onclick="playerFeatureAlert('下一首')">
                                 <i data-lucide="skip-forward" class="w-6 h-6 fill-current"></i>
                             </button>
                             
-                            <!-- 重複播放 -->
                             <button class="hover:text-white transition opacity-50" title="重複播放" onclick="playerFeatureAlert('重複播放')">
                                 <i data-lucide="repeat" class="w-5 h-5"></i>
                             </button>
@@ -580,19 +571,31 @@
             })
             .catch(error => {
                 clearInterval(textInterval);
-                if(error.message && (error.message.includes("異常") || error.message.includes("不建議"))) {
+                // 🔥 【修復核心】：擴充關鍵字攔截，只要是醫療警告就正確顯示紅色卡片
+                const isMedicalWarning = error.message && (
+                    error.message.includes("異常") || 
+                    error.message.includes("不建議") || 
+                    error.message.includes("不穩定") || 
+                    error.message.includes("心臟衰竭") ||
+                    error.message.includes("不宜")
+                );
+
+                if(isMedicalWarning) {
                      document.getElementById('section-loading').classList.add('hidden'); 
                      document.getElementById('section-results').classList.remove('hidden'); 
                      document.getElementById('dangerAlert').classList.remove('hidden'); 
                      document.getElementById('normalPlanArea').classList.add('hidden'); 
-                     document.getElementById('dangerReason').innerText = "• " + error.message; 
-                     document.getElementById('resultTitle').innerHTML = `<span class="text-red-600">高風險數值阻擋</span>`; 
+                     
+                     document.getElementById('dangerReason').innerText = "• 系統判定：" + error.message; 
+                     
+                     document.getElementById('resultTitle').innerHTML = `<span class="text-red-600">高風險狀態阻擋</span>`; 
                      document.getElementById('resultHeaderIcon').innerHTML = '<i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>'; 
-                     document.getElementById('resultSummary').innerText = "為保護您的安全，今日請暫停運動並充分休息。"; 
+                     document.getElementById('resultSummary').innerText = "為保護您的安全，系統已暫停今日的運動計畫。"; 
                      document.getElementById('goalBadge').classList.add('hidden');
                      lucide.createIcons();
                 } else { 
-                     alert("連線失敗！請確認地端 api_server.py 執行中。\n" + error.message); 
+                     // 只有真正的當機才跳 alert
+                     alert("連線失敗！請確認後端 api_server.py 執行中。\n系統錯誤訊息：" + error.message); 
                      document.getElementById('section-loading').classList.add('hidden'); 
                      document.getElementById('section-step-2').classList.remove('hidden'); 
                 }
@@ -625,7 +628,7 @@
         }
 
         // ==========================================
-        // 渲染結果畫面
+        // 渲染結果畫面 (含縮圖與叮嚀)
         // ==========================================
         function generateResults(backendData) {
             document.getElementById('section-loading').classList.add('hidden');
