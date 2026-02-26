@@ -27,8 +27,6 @@ from ultralytics.utils import LOGGER
 from modules.gpt_summary import call_openai_label
 
 
-
-
 # ==================== 基本設定 ====================
 
 LOGGER.setLevel(logging.WARNING)
@@ -65,7 +63,6 @@ WEIGHT_BINS = {
 }
 
 G_CONST = 9.81  # m/s^2
-
 
 
 # ==================== 幾何計算 ====================
@@ -157,9 +154,21 @@ def calc_kinematics(angle_list, fps):
     peaks, _   = find_peaks(arr,  prominence=max(8, 0.15 * rom_p), distance=int(fps * 0.25))
     valleys, _ = find_peaks(-arr, prominence=max(8, 0.15 * rom_p), distance=int(fps * 0.25))
 
-    duration = len(arr) / fps
     reps = int(round((len(peaks) + len(valleys)) / 2))
-    freq = float(reps / duration) if duration > 0 else 0.0
+
+    # 🔥 【優化核心】：動態擷取「有效運動區間」來計算真實頻率
+    all_extrema = np.sort(np.concatenate((peaks, valleys)))
+    
+    if len(all_extrema) >= 2:
+        # 有效時間 = (最後一個極值點 - 第一個極值點) / fps
+        # 加上一個預估的緩衝週期，避免除數過小導致頻率爆衝
+        cycle_buffer = 1.0 / (reps if reps > 0 else 1) 
+        active_duration = (all_extrema[-1] - all_extrema[0]) / fps + cycle_buffer
+    else:
+        # 如果沒抓到波峰波谷（幾乎沒動），才用整支影片長度當分母
+        active_duration = len(arr) / fps
+
+    freq = float(reps / active_duration) if active_duration > 0 else 0.0
 
     return dict(
         rom_min=rom_min,
@@ -286,10 +295,6 @@ def classify_activity_level(stats: dict) -> str:
     return "中"
 
 
-
-
-
-
 def collect_angle(frame, angles, key, a, b, c, label, color):
     """計算角度、存起來，順便畫在影片上（安全版）"""
     ang = compute_angle(a, b, c)
@@ -313,7 +318,6 @@ def collect_angle(frame, angles, key, a, b, c, label, color):
         color,
         TEXT_THICKNESS
     )
-
 
 
 def extract_joint_stats(feats, joints, keys):
@@ -360,8 +364,6 @@ def is_lower_dominant(knee_stats, hip_stats):
     return False
 
 
-
-
 def pick_primary_joint(feats, rank_mode: str = "rom_freq"):
     """
     選『主關節/主區域』：
@@ -383,11 +385,9 @@ def pick_primary_joint(feats, rank_mode: str = "rom_freq"):
             ("Lower","Knee","Right"): knee_R,
         }
 
-        # ✅ 改成用 score 排序（你可切 energy / hybrid）
         scored = [(k, v, joint_rank_score(v, mode=rank_mode)) for k, v in candidates.items()]
         best_k, best_v, best_s = max(scored, key=lambda x: x[2])
 
-        # 如果全部 score 都是 0，就退回 ROM 最大（避免選不到）
         if best_s <= 0:
             best_k, best_v = max(candidates.items(), key=lambda x: x[1].get("rom_p5_p95", 0))
 
@@ -420,26 +420,19 @@ def pick_primary_joint(feats, rank_mode: str = "rom_freq"):
     return "Unknown", "Unknown", "Center", {}
 
 
-
-
-
 # ==================== 關節衝擊力換算 ====================
 def estimate_relative_impact_bw(stats: dict):
     """
-    估計『相對衝擊力（倍體重 BW）』範圍：回傳 (level_zh, (bw_low, bw_high))
-    - 這是『影片負荷特性』的保守估計
-    - 僅用已經算出來的 posture / primary_region / ROM / freq
+    估計『相對衝擊力（倍體重 BW）』範圍
     """
     posture = stats.get("posture", "Unknown")
     region = stats.get("primary_region", "Unknown")
     rom = float(stats.get("rom_p5_p95", 0) or 0)
     freq = float(stats.get("frequency_hz", 0) or 0)
 
-    # 預設：低負荷（例如坐姿、躺姿、上肢小幅度）
     level = "低"
     bw_range = (0.8, 1.2)
 
-    # 站姿 + 下肢：可能出現較高關節負荷（尤其是大幅度、快節奏）
     if posture == "Standing" and region == "Lower":
         if rom >= 70 and freq >= 0.8:
             level = "高"
@@ -450,14 +443,10 @@ def estimate_relative_impact_bw(stats: dict):
         else:
             level = "低"
             bw_range = (1.0, 1.5)
-
-    # 上肢動作通常關節衝擊相對小（以保守低～中）
     elif region == "Upper":
         if rom >= 60 and freq >= 0.8:
             level = "中"
             bw_range = (1.0, 1.6)
-
-    # 核心等長（例如平板）：多為持續出力，衝擊不高但負擔可能累積
     elif region == "Core":
         level = "中"
         bw_range = (1.0, 1.4)
@@ -466,10 +455,7 @@ def estimate_relative_impact_bw(stats: dict):
 
 
 def impact_newton_by_weight_bins(bw_range, weight_bins=WEIGHT_BINS):
-    """
-    將 bw_range (倍體重) 轉成各體重區間的衝擊力 N 範圍
-    回傳 dict：{ "50–59 公斤": {"min_N":..., "max_N":...}, ... }
-    """
+    """將 bw_range (倍體重) 轉成各體重區間的衝擊力 N 範圍"""
     bw_low, bw_high = bw_range
     out = {}
     for label, w_kg in weight_bins.items():
@@ -480,13 +466,11 @@ def impact_newton_by_weight_bins(bw_range, weight_bins=WEIGHT_BINS):
 
 
 def impact_text_zh(impact_by_weight: dict) -> str:
-    """把衝擊力 dict 轉成一行可讀中文（方便終端機印）"""
+    """把衝擊力 dict 轉成一行可讀中文"""
     parts = []
     for k, v in impact_by_weight.items():
         parts.append(f"{k}:{v['min_N']:.0f}–{v['max_N']:.0f}N")
     return "；".join(parts)
-
-
 
 
 # ---------- 計算（終端機輸出用） ----------
@@ -499,10 +483,9 @@ def format_value(v):
     return v
 
 
-
 # ==================== YOLO 主流程 ====================
 def yolo_process_one_video(model, video_path, out_dir):
-    """對單一影片做 YOLO → 運動分析 → 輸出結果（cap 只開一次，加速）"""
+    """對單一影片做 YOLO → 運動分析 → 輸出結果"""
     os.makedirs(out_dir, exist_ok=True)
 
     cap = cv2.VideoCapture(video_path)
@@ -526,64 +509,47 @@ def yolo_process_one_video(model, video_path, out_dir):
         if not ok_read:
             break
 
-        # 單幀推論（⚠️ 必須在 while 內）
+        # 單幀推論
         res = model.predict(source=frame0, verbose=False, conf=0.25, imgsz=640)[0]
-        frame = res.plot()
+        
+        # 🔥 關鍵修改：加上 boxes=False, labels=False，讓輸出的示範影片保持乾淨無外框
+        frame = res.plot(boxes=False, labels=False)
 
         if writer is None:
             h, w = frame.shape[:2]
             writer = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
 
-        # 沒有 keypoints / 沒有人
         if res.keypoints is None or res.keypoints.xy is None or len(res.keypoints.xy) == 0:
             writer.write(frame)
             continue
 
-        # ====== 取「單人」：取 person box conf 最高的那個 ======
         idx_best = 0
         if res.boxes is not None and res.boxes.conf is not None and len(res.boxes.conf) > 0:
-            idx_best = int(torch.argmax(res.boxes.conf).item())  # 需要 import torch
+            idx_best = int(torch.argmax(res.boxes.conf).item())
 
         j = res.keypoints.xy.cpu().numpy()[idx_best]
         kp_conf = res.keypoints.conf.cpu().numpy()[idx_best] if res.keypoints.conf is not None else None
         ok = (lambda i: True) if kp_conf is None else (lambda i: kp_conf[i] >= KPT_CONF_TH)
 
-        # 體位判斷
         p = classify_posture(j) if all(ok(i) for i in (5,6,11,12,13,14)) else "Unknown"
         postures.append(p)
-        cv2.putText(frame, f"Posture:{p}", (20, 35),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+        cv2.putText(frame, f"Posture:{p}", (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
 
-        # 髖角（shoulder - hip - knee）
-        if all(ok(i) for i in (5,11,13)):
-            collect_angle(frame, angles, "hip_L", j[5], j[11], j[13], "HipL", (0,255,255))
-        if all(ok(i) for i in (6,12,14)):
-            collect_angle(frame, angles, "hip_R", j[6], j[12], j[14], "HipR", (0,255,255))
-
-        # 膝角（hip - knee - ankle）
-        if all(ok(i) for i in (11,13,15)):
-            collect_angle(frame, angles, "knee_L", j[11], j[13], j[15], "KneeL", (0,255,0))
-        if all(ok(i) for i in (12,14,16)):
-            collect_angle(frame, angles, "knee_R", j[12], j[14], j[16], "KneeR", (0,255,0))
-
-        # 肘角（shoulder - elbow - wrist）
-        if all(ok(i) for i in (5,7,9)):
-            collect_angle(frame, angles, "elbow_L", j[5], j[7], j[9], "ElbL", (255,255,0))
-        if all(ok(i) for i in (6,8,10)):
-            collect_angle(frame, angles, "elbow_R", j[6], j[8], j[10], "ElbR", (255,255,0))
-
-        # 頭部活動（安全監測）
+        if all(ok(i) for i in (5,11,13)): collect_angle(frame, angles, "hip_L", j[5], j[11], j[13], "HipL", (0,255,255))
+        if all(ok(i) for i in (6,12,14)): collect_angle(frame, angles, "hip_R", j[6], j[12], j[14], "HipR", (0,255,255))
+        if all(ok(i) for i in (11,13,15)): collect_angle(frame, angles, "knee_L", j[11], j[13], j[15], "KneeL", (0,255,0))
+        if all(ok(i) for i in (12,14,16)): collect_angle(frame, angles, "knee_R", j[12], j[14], j[16], "KneeR", (0,255,0))
+        if all(ok(i) for i in (5,7,9)): collect_angle(frame, angles, "elbow_L", j[5], j[7], j[9], "ElbL", (255,255,0))
+        if all(ok(i) for i in (6,8,10)): collect_angle(frame, angles, "elbow_R", j[6], j[8], j[10], "ElbR", (255,255,0))
         if all(ok(i) for i in (0,5,6)):
             sc = (j[5] + j[6]) / 2
             ha = compute_head_angle(j[0], sc)
-            if ha > 0:
-                angles["head"].append(float(ha))
+            if ha > 0: angles["head"].append(float(ha))
 
         writer.write(frame)
 
     cap.release()
-    if writer is not None:
-        writer.release()
+    if writer is not None: writer.release()
 
     feats = {k: calc_kinematics(v, fps) for k, v in angles.items()}
 
@@ -625,13 +591,10 @@ def yolo_process_one_video(model, video_path, out_dir):
     return out_path, stats, duration_s
 
 
-
-
 # ==================== Main ====================
 
 def main():
     """批次處理資料夾內所有影片（終端機輸出與 CSV 欄位一致 + GPT 摘要必備）"""
-
     model = YOLO(YOLO_MODEL_PATH)
     rows = []
 
@@ -653,9 +616,8 @@ def main():
         yolo_result = pack_yolo_result(out_video, stats, duration_s)
         activity_level = classify_activity_level(stats)
 
-
         # GPT（必備摘要）
-        gpt_pack = call_openai_label(f, duration_s, stats, activity_level)
+        gpt_pack = call_openai_label(f, duration_s, stats, activity_level, {}, {})
 
         row = dict(
             file_name=f,
@@ -692,7 +654,6 @@ def main():
 
         print("=" * 60 + "\n")
 
-    # ✅ 這裡才檢查 rows 是否有成功產生資料
     if not rows:
         print(">>> 沒有任何影片成功產生結果，CSV 不輸出")
         return
@@ -706,25 +667,16 @@ def main():
     print(f">>> 全部完成，CSV 已輸出：{OUTPUT_CSV_PATH}")
 
 
-
-
 def pack_yolo_result(out_path, stats, duration_s):
-    """
-    封裝給主系統 / RAG / 規則 / GPT 用的 YOLO 回傳格式
-    """
+    """封裝給主系統 / RAG / 規則 / GPT 用的 YOLO 回傳格式"""
     return {
-        # --- 影片層級 ---
         "video_output": out_path,
         "duration_s": duration_s,
-
-        # --- 高階語意（系統判斷主力）---
         "posture": stats.get("posture"),
         "primary_region": stats.get("primary_region"),
         "primary_joint": stats.get("primary_joint"),
         "primary_side": stats.get("primary_side"),
         "activity_level": classify_activity_level(stats),
-
-        # --- 主關節運動學（避免用全關節雜訊）---
         "primary_kinematics": {
             "rom_p5_p95": stats.get("rom_p5_p95"),
             "frequency_hz": stats.get("frequency_hz"),
@@ -733,8 +685,6 @@ def pack_yolo_result(out_path, stats, duration_s):
             "intensity_p95": stats.get("intensity_p95"),
             "intensity_energy": stats.get("intensity_energy"),
         },
-
-        # --- 醫療安全 ---
         "impact": {
             "level": stats.get("impact_level"),
             "bw_low": stats.get("impact_bw_low"),
@@ -745,8 +695,5 @@ def pack_yolo_result(out_path, stats, duration_s):
     }
 
 
-
-
 if __name__ == "__main__":
     main()
-

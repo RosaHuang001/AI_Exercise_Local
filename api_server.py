@@ -10,7 +10,7 @@ import json
 # 引入影像串流引擎
 from stream_engine import generate_frames 
 
-# 引入您寫好的條件整理與風險評估
+# 引入條件整理與風險評估
 from rag.user_condition_mapper import build_user_context
 
 # 引入推薦引擎函數與資料結構
@@ -21,11 +21,10 @@ from modules.recommender_filter import (
     soft_rank_exercises
 )
 
-# 【架構升級】直接從 gpt_summary.py 引入寫好的生成函數，不在這裡寫 Prompt！
+# 引入 GPT 模組
 try:
     from modules.gpt_summary import generate_today_summary, generate_7_day_plan
 except ImportError:
-    # 萬一 gpt_summary 模組遺失的防呆機制
     print("⚠️ 警告：無法載入 gpt_summary 模組，將使用預設文字。")
     def generate_today_summary(*args): return "系統已依據狀況為您安排課表。"
     def generate_7_day_plan(*args): return ["預設動作"] * 7
@@ -35,220 +34,121 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
 # ==========================================
-# 資料格式轉換（與前端 rehab_app.html 完全對應）
+# 資料格式轉換邏輯
 # ==========================================
 def _get(ui_data, *keys):
-    """取第一個存在的 key（前後端對應，可混用 camelCase / snake_case）"""
     for k in keys:
         v = ui_data.get(k)
-        if v is not None and v != "":
-            return v
+        if v is not None and v != "": return v
     return None
 
 def map_ui_to_rag_format(ui_data):
-    """將網頁 (HTML) 傳來的 JSON 翻譯成 RAG 期待的巢狀中文"""
+    """將 UI 資料翻譯成 RAG 期待格式"""
     gender_map = {"male": "男性", "female": "女性"}
+    age_map = {"18-39": "18–39歲", "40-54": "40–54歲", "55-64": "55–64歲", "65-74": "65–74歲", "75+": "75歲以上"}
+    nyha_map = {"I": "I 級", "II": "II 級", "III": "III 級", "IV": "IV 級"}
     
-    age_raw = _get(ui_data, "age") or ""
-    age_map = {
-        "18-39": "18–39歲", "40-54": "40–54歲",
-        "55-64": "55–64歲", "65-74": "65–74歲", "75+": "75歲以上"
-    }
-    age_str = age_map.get(age_raw, "65–74歲") 
+    current_symptom = _get(ui_data, "currentSymptom") or "none"
+    sys_bp = _get(ui_data, "sysBP")
+    is_stable = "不穩定" if (int(sys_bp or 120) > 180 or current_symptom != "none") else "穩定"
 
-    nyha_raw = _get(ui_data, "nyhaclass", "nyhaClass")
-    nyha_map = {
-        "I": "I 級（日常活動無症狀）", "II": "II 級（一般活動輕微症狀）",
-        "III": "III 級（輕度活動即有症狀）", "IV": "IV 級（休息時仍有症狀）"
-    }
-    nyha_str = nyha_map.get(nyha_raw, "II 級（一般活動輕微症狀）")
-
-    chronic = _get(ui_data, "chronic") or []
-    surgery = _get(ui_data, "surgery") or []
-    symptoms = _get(ui_data, "symptoms") or []
-    sys_bp = _get(ui_data, "sysBP", "sys_bp")
-    sysBP = int(sys_bp) if sys_bp is not None else 120
-    current_symptom = _get(ui_data, "currentSymptom", "current_symptom") or "none"
-    
-    is_stable = "不穩定" if (sysBP > 180 or sysBP < 90 or current_symptom != "none") else "穩定"
-
-    rag_input = {
+    return {
         "基本資料": {
             "族群": "心臟衰竭",
-            "年齡層": age_str,
+            "年齡層": age_map.get(_get(ui_data, "age"), "65–74歲"),
             "性別": gender_map.get(_get(ui_data, "gender"), "男性")
         },
         "心臟衰竭狀態": {
-            "NYHA 心臟功能分級": nyha_str,
-            "目前是否穩定": is_stable,
-            "心臟衰竭類型": "射出分率降低型", 
-            "是否曾發生急性惡化": "否", 
-            "是否使用心室輔助器（LVAD）": "是" if surgery and "左心室輔助器 (LVAD)" in surgery else "否"
-        },
-        "疾病史": {
-            "是否有高血壓": "是" if chronic and "高血壓" in chronic else "否",
-            "是否有糖尿病": "是" if chronic and "糖尿病" in chronic else "否",
-            "是否有冠狀動脈疾病": "是" if chronic and "冠心症/心肌梗塞" in chronic else "否",
-            "是否有心律不整": "是" if chronic and "心律不整" in chronic else "否",
-            "是否有肺部疾病": "否"
-        },
-        "開刀史": {
-            "是否曾接受心臟支架或繞道手術": "是" if surgery and ("心導管/支架置放" in surgery or "冠狀動脈繞道手術" in surgery) else "否",
-            "是否曾接受心臟瓣膜手術": "否",
-            "是否曾接受人工關節置換": "是" if surgery and "人工關節置換" in surgery else "否",
-            "是否有近期大型手術史": "否"
-        },
-        "用藥史": {
-            "是否使用鈣離子通道阻斷劑": "否",
-            "是否使用抗心律不整藥物": "否",
-            "是否使用影響運動耐受性的藥物": "否"
+            "NYHA 心臟功能分級": nyha_map.get(_get(ui_data, "nyhaclass"), "II 級"),
+            "目前是否穩定": is_stable
         },
         "個人自覺症狀評估": {
-            "呼吸困難程度": "中度" if (symptoms and "活動時呼吸喘促 (喘)" in symptoms) or current_symptom == "breathless" else "無",
-            "是否出現胸痛": "是" if current_symptom == "chest_pain" else "否",
-            "是否出現頭暈或接近昏厥": "是" if current_symptom == "chest_pain" else "否",
-            "下肢水腫程度": "明顯" if symptoms and "下肢水腫 (腫)" in symptoms else "無",
-            "疲勞程度": "中等" if (symptoms and "容易疲倦無力 (累)" in symptoms) or current_symptom == "mild_tired" else "無"
+            "呼吸困難程度": "中度" if current_symptom == "breathless" else "無",
+            "是否出現胸痛": "是" if current_symptom == "chest_pain" else "否"
         },
-        "運動情境": {
-            "運動目的": "復健訓練"
-        },
-        "運動中即時回饋（可選填）": {
-            "是否出現不適症狀": "否",
-            "自覺運動強度（RPE）": "中等",
-            "是否出現異常心悸": "否"
-        }
+        "運動情境": {"運動目的": "復健訓練"}
     }
-    return rag_input
-
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
-    """接收網頁數據 ➡️ 風險評估 ➡️ 知識庫篩選 (Hard/Soft) ➡️ GPT總摘要 ➡️ 回傳網頁"""
+    """接收數據 ➡️ 篩選動作 ➡️ 回傳原始影片路徑與運動指標"""
     ui_data = request.json
-    print("\n📥 [1] 收到前端網頁的原始資料...")
-    
     try:
-        # --- 步驟 A：格式翻譯 ---
+        # 1. 安全評估
         rag_formatted_data = map_ui_to_rag_format(ui_data)
-        
-        # --- 步驟 B：建立 Context 與 運動前風險篩選 (Risk Gate) ---
         user_context = build_user_context(rag_formatted_data)
         user_condition = user_context.get("user_conditions", {})
         risk_assessment = user_context.get("risk_assessment", {})
-        
-        print(f"🛡️ [2] Risk Gate 評估結果: {risk_assessment.get('risk_level')} (允許運動: {risk_assessment.get('allow_exercise')})")
 
         if not risk_assessment.get('allow_exercise', True):
-            reason = risk_assessment.get('reason', '今日生理數值異常，不建議進行運動。')
-            return jsonify({"status": "error", "message": reason}), 400
+            return jsonify({"status": "error", "message": risk_assessment.get('reason', '數值異常')}), 400
 
-        # --- 步驟 C：真實的推薦模組 ---
-        print("🧠 [3] 讀取知識庫並進行 Hard Filter / Soft Ranking...")
+        # 2. 動作推薦
+        user_state = UserState(nyha=user_condition.get("nyha", ""), contraindications=risk_assessment.get("risk_flags", []))
+        exercise_library = load_exercise_library(os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_library.json"))
         
-        contraindications = (
-            user_condition.get("contraindications") or 
-            risk_assessment.get("contraindications") or 
-            risk_assessment.get("risk_flags") or []
-        )
-        
-        user_state = UserState(
-            nyha=user_condition.get("nyha", ""),
-            contraindications=contraindications
-        )
-        
-        lib_path = os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_library.json")
-        map_path = os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_video_map.json")
-        
-        exercise_library = load_exercise_library(lib_path)
-        with open(map_path, "r", encoding="utf-8") as f:
+        with open(os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_video_map.json"), "r", encoding="utf-8") as f:
             video_map = json.load(f)
             
         filtered = hard_filter_exercises(user_state, exercise_library)
         ranked_exercises = soft_rank_exercises(user_state, filtered["included"])
         
-        # --- 步驟 D：將結果包裝成網頁需要的 JSON 格式 ---
         videos_for_html = []
         color_themes = ["bg-blue-100 text-blue-600", "bg-green-100 text-green-600", "bg-purple-100 text-purple-600", "bg-orange-100 text-orange-600"]
-        
         selected_top_4 = ranked_exercises[:4]
         
         for idx, ex in enumerate(selected_top_4):
             ex_id = ex["exercise_id"]
-            title_zh = ex.get("name_zh", ex_id)
-            
             raw_vids = video_map.get(ex_id)
             filenames = [raw_vids] if isinstance(raw_vids, str) else (raw_vids if isinstance(raw_vids, list) else [])
             
+            # 擷取線下算好的精準運動學數據 (Reps/Freq/ROM)
+            stats_list = [
+                {"icon": "refresh-cw", "text": f"{ex.get('reps', 0)} 次/組"},
+                {"icon": "timer", "text": f"節奏 {float(ex.get('frequency_hz', 0)):.1f}/s"},
+                {"icon": "move-horizontal", "text": f"幅度 {float(ex.get('rom_p5_p95', 0)):.0f}°"}
+            ]
+
             for f_name in filenames:
                 if not f_name: continue
-                vid_path = f"exercise_videos/{f_name}" if not f_name.startswith("exercise_videos") else f_name
+                
+                # 🔥 關鍵修正：確保 filename 指向原始的 exercise_videos 資料夾
+                # 使用者在跟練時看到的是最清晰的原片，但顯示的數據是 YOLO 算出來的精華
+                clean_vid_path = f"exercise_videos/{f_name}"
                 
                 videos_for_html.append({
-                    # 🔥 關鍵修改：移除了後面的 (AI評分:{score})，保持畫面乾淨專業
-                    "title": title_zh,
-                    "filename": vid_path,
-                    "duration": "0:30", 
+                    "title": ex.get("name_zh", ex_id),
+                    "filename": clean_vid_path,
                     "tags": [f"NYHA {user_state.nyha}", ex.get("impact_level", "安全")],
+                    "stats": stats_list,
                     "color": color_themes[idx % len(color_themes)],
-                    "tip": ex.get("gpt_safety_tip") or ex.get("gpt_risk_notice") or "請依個人節奏進行，保持呼吸平穩，若感到關節不適請立即暫停。"
+                    "tip": ex.get("gpt_safety_tip") or "請依個人節奏進行，保持呼吸平穩。"
                 })
-            
-        if not videos_for_html:
-            videos_for_html.append({
-                "title": "溫和伸展 (系統預設)",
-                "filename": "exercise_videos/單邊抬腳.mp4",
-                "duration": "10:00",
-                "tags": ["安全", "舒緩"],
-                "color": "bg-gray-100 text-gray-600",
-                "tip": "請依個人節奏進行，保持呼吸平穩，若感到關節不適請立即暫停。"
-            })
-
-        # --- 步驟 E：把生成工作外包給 gpt_summary.py ---
-        print("💬 [4] 正在請求 GPT 生成今日課表總說明與 7 日計畫...")
+        
+        # 3. GPT 生成文案
         gpt_summary_text = generate_today_summary(user_condition, risk_assessment, selected_top_4)
         gpt_weekly_plan = generate_7_day_plan(user_condition, risk_assessment, selected_top_4)
 
-        print(f"✅ [5] 成功推薦 {len(videos_for_html)} 部專屬影片與摘要，準備回傳給網頁！\n")
-        
         return jsonify({
             "status": "success",
-            "message": "評估分析完成",
             "videos": videos_for_html,
             "plan": gpt_weekly_plan,
             "gpt_summary": gpt_summary_text
         })
         
     except Exception as e:
-        print("❌ 系統分析時發生異常:")
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @app.route('/video_feed')
 def video_feed():
-    """提供即時影像串流給 HTML (OpenCV MJPEG Stream)"""
+    """啟動跟練引擎：左側顯示原始影片，右側運算使用者骨架"""
     videos_param = request.args.get('videos', '')
-    if not videos_param:
-        return "沒有提供影片", 400
-        
+    if not videos_param: return "沒有提供影片", 400
     playlist = videos_param.split(',')
-    print(f"🎥 開始即時影像串流，清單: {playlist}")
-    
-    return Response(
-        generate_frames(playlist),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
-
+    return Response(generate_frames(playlist), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    print("=========================================")
-    print("🚀 三總心臟衰竭復健系統 API 伺服器啟動中...")
-    print("=========================================")
-    
-    html_path = os.path.join(SCRIPT_DIR, "rehab_app.html")
-    webbrowser.open(f"file://{html_path}")
-    
+    print("🚀 心臟衰竭復健運動推薦系統 API 伺服器啟動中...")
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)
