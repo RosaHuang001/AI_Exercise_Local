@@ -197,35 +197,69 @@
                 </form>
             </div>
 
-            <!-- 步驟 2：今日數據 (簡潔版) -->
-            <div id="section-step-2" class="max-w-lg mx-auto py-4 hidden">
+            <div id="section-step-2" class="max-w-2xl mx-auto py-4 hidden">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800 mb-2">今日生理數據評估</h2>
-                    <p class="text-gray-500">系統必須評估您當下的身體狀況。</p>
+                    <p class="text-gray-500">為了運動安全，系統必須評估您 <span class="text-red-500 font-bold">當下</span> 的身體狀況。</p>
                 </div>
+            
+                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-2xl flex gap-3 mb-8">
+                    <i data-lucide="alert-triangle" class="text-yellow-600 w-6 h-6 shrink-0 mt-0.5"></i>
+                    <p class="text-sm text-yellow-800 leading-relaxed">
+                        依據三軍總醫院心臟衰竭中心照護標準，若體重增加過快或血壓/心跳超標，請立刻暫停運動並盡速回診。
+                    </p>
+                </div>
+            
                 <form id="formStep2" onsubmit="startAnalysis(event)" class="space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">收縮壓 (高壓)</label>
-                            <input type="number" id="sysBP" required placeholder="請輸入" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none">
+                            <label class="text-sm font-bold text-gray-700">收縮壓 (高壓)</label>
+                            <div class="relative">
+                                <input type="number" id="sysBP" required placeholder="例如: 120" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none pr-16">
+                                <span class="absolute right-4 top-3 text-gray-400 text-sm">mmHg</span>
+                            </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-700">今日體重</label>
-                            <input type="number" id="todayWeight" step="0.1" required placeholder="請輸入" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none">
+                            <label class="text-sm font-bold text-gray-700">舒張壓 (低壓)</label>
+                            <div class="relative">
+                                <input type="number" id="diaBP" required placeholder="例如: 80" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none pr-16">
+                                <span class="absolute right-4 top-3 text-gray-400 text-sm">mmHg</span>
+                            </div>
                         </div>
                     </div>
+            
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-gray-700">安靜心跳率 (脈搏)</label>
+                            <div class="relative">
+                                <input type="number" id="heartRate" required placeholder="例如: 75" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none pr-16">
+                                <span class="absolute right-4 top-3 text-gray-400 text-sm">次/分</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-gray-700">今日體重 (運動前量測)</label>
+                            <div class="relative">
+                                <input type="number" id="todayWeight" step="0.1" required placeholder="例如: 66.0" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none pr-12">
+                                <span class="absolute right-4 top-3 text-gray-400 text-sm">公斤</span>
+                            </div>
+                        </div>
+                    </div>
+            
                     <div class="space-y-2">
-                        <label class="text-sm font-medium text-gray-700">當下症狀</label>
+                        <label class="text-sm font-bold text-gray-700">當下不適症狀</label>
                         <select id="currentSymptom" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white">
-                            <option value="" disabled selected>請選擇當下狀態...</option>
+                            <option value="" disabled selected>目前有任何不舒服嗎？</option>
                             <option value="none">精神良好，無不適</option>
-                            <option value="breathless">輕微喘 ⚠️</option>
+                            <option value="breathless">輕微喘</option>
+                            <option value="chest_pain">胸悶/胸痛</option>
+                            <option value="dizzy">頭暈/目眩</option>
                         </select>
                     </div>
-                    <div class="flex gap-4">
-                        <button type="button" onclick="goBackToStep1()" class="w-1/3 bg-gray-100 py-4 rounded-xl font-bold">上一步</button>
-                        <button type="submit" class="w-2/3 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
-                            <i data-lucide="sparkles" class="w-5 h-5"></i> 開始分析
+            
+                    <div class="flex gap-4 pt-4">
+                        <button type="button" onclick="goBackToStep1()" class="w-1/3 bg-gray-100 py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors">上一步</button>
+                        <button type="submit" class="w-2/3 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-blue-700 transition-colors">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i> 開始 AI 分析
                         </button>
                     </div>
                 </form>
@@ -233,16 +267,24 @@
 
             <!-- 分析中動畫 -->
             <div id="section-loading" class="hidden absolute inset-0 bg-white flex flex-col items-center justify-center z-20">
-                <div class="relative w-32 h-32 mb-8">
+                <div class="relative w-40 h-40 mb-10">
                     <div class="absolute inset-0 bg-blue-100 rounded-full ai-pulse"></div>
                     <div class="absolute inset-4 bg-blue-500 rounded-full flex items-center justify-center shadow-lg text-white">
-                        <i data-lucide="brain-circuit" class="w-12 h-12"></i>
+                        <i data-lucide="brain-circuit" class="w-16 h-16"></i>
                     </div>
-                    <div class="absolute inset-0 rounded-full overflow-hidden"><div class="scan-line"></div></div>
+                    <div class="absolute inset-0 rounded-full overflow-hidden">
+                        <div class="scan-line"></div>
+                    </div>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-800">AI 正在評估安全性...</h3>
-                <p id="loading-text" class="text-blue-500 font-medium">驗證生理指標中...</p>
-                <div class="w-64 h-2 bg-gray-100 rounded-full mt-6 overflow-hidden"><div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-[3000ms] ease-out"></div></div>
+                
+                <div class="text-center space-y-4">
+                    <h3 class="text-2xl font-bold text-gray-800">AI 正在綜合評估安全性...</h3>
+                    <p id="loading-text" class="text-blue-600 font-bold tracking-widest min-h-[1.5rem] text-lg">初始化系統模組...</p>
+                    
+                    <div class="w-72 h-2 bg-gray-100 rounded-full mt-6 overflow-hidden mx-auto border border-gray-100">
+                        <div id="progress-bar" class="h-full bg-blue-500 w-0 transition-all duration-[4000ms] ease-out"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- 即時跟練影像 (雙畫面) -->
@@ -268,6 +310,22 @@
                         <h3 class="font-bold text-gray-800 text-lg mb-2">AI 專屬課表總結</h3>
                         <p class="text-sm text-gray-700 leading-relaxed bg-blue-50/40 p-4 rounded-xl border border-blue-100 mt-2" id="resultSummary"></p>
                     </div>
+                    <div id="section-results" class="hidden fade-in pb-10 space-y-6">
+    
+                        <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex gap-6 items-start relative overflow-hidden">
+                            <p class="text-sm text-gray-700 ..." id="resultSummary"></p>
+                        </div>
+                    
+                        <div id="rpe-instruction-box" class="bg-blue-50/50 border-l-4 border-blue-500 p-5 rounded-2xl mt-4 shadow-sm">
+                            <div class="flex items-center gap-2 text-blue-800 font-bold mb-2">
+                                <i data-lucide="gauge" class="w-5 h-5"></i>
+                                <span>Borg RPE 運動強度建議 (依據 NYHA 與動作負荷計算)</span>
+                            </div>
+                            <p class="text-sm text-gray-600 leading-relaxed" id="rpeContent">
+                                </p>
+                        </div>
+                    
+                        </div>
                     <!-- 當前目標徽章 (還原 image_c09d3a.png) -->
                     <div class="absolute right-6 top-6 bg-blue-50/80 p-3 rounded-2xl border border-blue-100 text-center w-24">
                         <span class="text-[10px] text-gray-400 block mb-1">當前目標</span>
@@ -325,19 +383,78 @@
             document.getElementById('section-step-2').classList.add('hidden');
         }
 
+
         async function startAnalysis(e) {
             e.preventDefault();
-            const payload = { ...globalData, sysBP: document.getElementById('sysBP').value, todayWeight: document.getElementById('todayWeight').value, currentSymptom: document.getElementById('currentSymptom').value };
+            
+            // 1. 顯示載入畫面，隱藏輸入表單
             document.getElementById('section-step-2').classList.add('hidden');
             document.getElementById('section-loading').classList.remove('hidden');
-            setTimeout(() => document.getElementById('progress-bar').style.width = "100%", 100);
+
+            const loadingText = document.getElementById('loading-text');
+            const progressBar = document.getElementById('progress-bar');
+            
+            // 2. 啟動進度條動畫（配合 CSS transition）
+            setTimeout(() => {
+                if (progressBar) progressBar.style.width = "100%";
+            }, 100);
+
+            // 3. 設定像影片一樣的專業醫學對接階段文字
+            const stages = [
+                { time: 0,    text: "正在連線至遠端 AI 模組..." },
+                { time: 800,  text: "檢索 ACSM 運動指引與心衰竭照護標準..." }, // 展示專業度
+                { time: 1600, text: "進行生理指標安全性硬過濾 (Hard Filter)..." },
+                { time: 2400, text: "根據 NYHA 分級與訓練目標生成運動計畫..." },
+                { time: 3200, text: "評估完成，準備呈現個人化課表..." }
+            ];
+
+            // 依序切換文字
+            stages.forEach(stage => {
+                setTimeout(() => {
+                    if (loadingText) {
+                        loadingText.innerText = stage.text;
+                        // 加上一個簡單的淡入效果
+                        loadingText.style.opacity = 0;
+                        setTimeout(() => { loadingText.style.opacity = 1; }, 50);
+                    }
+                }, stage.time);
+            });
+
+            // 4. 準備傳送至後端 API 的數據
+            const payload = { 
+                ...globalData, 
+                sysBP: document.getElementById('sysBP').value, 
+                diaBP: document.getElementById('diaBP').value, // 需確保 HTML 有此 ID
+                heartRate: document.getElementById('heartRate').value, // 需確保 HTML 有此 ID
+                todayWeight: document.getElementById('todayWeight').value, 
+                currentSymptom: document.getElementById('currentSymptom').value 
+            };
 
             try {
-                const resp = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                // 5. 正式發送請求至後端伺服器
+                const resp = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
                 const res = await resp.json();
-                if (resp.ok) renderResults(res);
-                else alert("分析失敗：" + res.message);
-            } catch (err) { alert("無法連線後端"); location.reload(); }
+                
+                // 6. 稍微延遲（例如 4 秒），讓使用者看完整個專業動畫過程
+                setTimeout(() => {
+                    if (resp.ok) {
+                        renderResults(res);
+                    } else {
+                        alert("安全性分析未通過：" + res.message);
+                        location.reload();
+                    }
+                }, 4000);
+
+            } catch (err) { 
+                console.error(err);
+                alert("無法連線至後端 AI 伺服器，請確認 api_server.py 是否已啟動"); 
+                location.reload(); 
+            }
         }
 
         function renderResults(data) {
@@ -348,6 +465,20 @@
             const goalMap = { 'strength': '增強肌力', 'cardio': '心肺耐力', 'mobility': '活動度', 'pain': '減緩疼痛' };
             document.getElementById('resultGoalText').innerText = goalMap[globalData.improveGoal] || "個人復健";
             document.getElementById('resultSummary').innerText = data.gpt_summary;
+
+
+            // RPE 區塊內容
+            // 渲染基於 YOLO 數據生成的 RPE 指引
+            const rpeContent = document.getElementById('rpeContent');
+            if (data.rpe_text) {
+                // 將 [RPE:xx] 轉換為突出的藍色標籤
+                rpeContent.innerHTML = data.rpe_text.replace(/\[RPE:([\d-]+)\]/g, 
+                    '<span class="bg-blue-600 text-white px-2 py-0.5 rounded-md font-bold mx-1">RPE: $1</span>');
+            }
+            
+            lucide.createIcons();
+
+
 
             // 渲染動作清單：移除 (AI評分:x.x)
             document.getElementById('videoList').innerHTML = data.videos.map(v => `

@@ -332,7 +332,7 @@ def generate_today_summary(user_condition: dict, risk_assessment: dict, selected
 - 疾病穩定狀態：{stable}
 - 系統整體風險評估：{risk}
 
-【今日課表內容與物理特徵】
+【課表內容與物理特徵】
 - 包含動作串聯：{', '.join(ex_names)}
 - 主要活動區域：{region_str}
 - 系統估算最大關節相對負荷：約 {max_bw_str} 倍體重
@@ -396,3 +396,33 @@ def generate_7_day_plan(user_condition: dict, risk_assessment: dict, selected_ex
     except Exception as e:
         print(f"GPT 7日計畫生成失敗: {e}")
         return default_plan
+
+
+
+
+
+def generate_rpe_instruction(user_condition: dict, selected_exercises: list) -> str:
+    """根據 NYHA 分級與 YOLO 物理負荷，動態生成 RPE 強度建議"""
+    
+    # 1. 取得 NYHA 分級 (例如: "I", "II", "III", "IV")
+    nyha = str(user_condition.get("nyha", "II"))
+    
+    # 2. 找出推薦動作中的最大衝擊力 (YOLO 辨識數據)
+    max_bw = 0.0
+    for ex in selected_exercises:
+        # 假設資料結構中包含 impact_bw_high
+        bw_val = float(ex.get('stats', [{}])[0].get('text', '0').replace('倍體重', '') if ex.get('stats') else 0)
+        if bw_val > max_bw: max_bw = bw_val
+
+    # 3. 判定邏輯：NYHA III 級強制鎖定保守強度
+    if nyha == "III":
+        rpe_range = "[RPE:11] (輕鬆至輕微喘)"
+        safety_note = "由於您的心臟功能分級為 Class III，建議採取最保守強度。"
+    elif max_bw > 1.4:
+        rpe_range = "[RPE:11]-12 (微喘但可輕鬆對話)"
+        safety_note = "考量今日動作對關節負荷較大，強度不宜過高。"
+    else:
+        rpe_range = "[RPE:11]-13 (微喘但可持續對話)"
+        safety_note = "目前動作負荷適中，請維持在目標強度區間。"
+
+    return f"ACSM 強烈建議：根據您的 NYHA {nyha} 分級與今日動作負荷（約 {max_bw:.1f} 倍體重），運動時自覺費力感應控制在 {rpe_range}。{safety_note}"
