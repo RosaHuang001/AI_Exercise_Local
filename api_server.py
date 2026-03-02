@@ -4,15 +4,14 @@ from flask_cors import CORS
 import os
 import sys
 import traceback
-import webbrowser
 import json
+import webbrowser  # 新增：用於自動開啟瀏覽器
+from threading import Timer # 新增：用於延遲執行開啟動作
 
 # 引入影像串流引擎
 from stream_engine import generate_frames 
-
 # 引入條件整理與風險評估
 from rag.user_condition_mapper import build_user_context
-
 # 引入推薦引擎函數與資料結構
 from modules.recommender_filter import (
     UserState, 
@@ -20,14 +19,11 @@ from modules.recommender_filter import (
     hard_filter_exercises, 
     soft_rank_exercises
 )
-
 # 引入 GPT 模組
 try:
     from modules.gpt_summary import generate_today_summary, generate_7_day_plan
 except ImportError:
-    print("⚠️ 警告：無法載入 gpt_summary 模組，將使用預設文字。")
-    def generate_today_summary(*args): return "系統已依據狀況為您安排課表。"
-    def generate_7_day_plan(*args): return ["預設動作"] * 7
+    from gpt_summary import generate_today_summary, generate_7_day_plan
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -72,10 +68,10 @@ def map_ui_to_rag_format(ui_data):
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
-    """接收數據 ➡️ 篩選動作 ➡️ 回傳原始影片路徑與運動指標"""
+    """接收數據 ➡️ 篩選動作 ➡️ 回傳物理指標與影片"""
     ui_data = request.json
     try:
-        # 1. 安全評估
+        # 1. 安全評估 (RAG Engine)
         rag_formatted_data = map_ui_to_rag_format(ui_data)
         user_context = build_user_context(rag_formatted_data)
         user_condition = user_context.get("user_conditions", {})
@@ -84,49 +80,40 @@ def analyze_data():
         if not risk_assessment.get('allow_exercise', True):
             return jsonify({"status": "error", "message": risk_assessment.get('reason', '數值異常')}), 400
 
-        # 2. 動作推薦
+        # 2. 動作推薦與數據讀取
         user_state = UserState(nyha=user_condition.get("nyha", ""), contraindications=risk_assessment.get("risk_flags", []))
-        exercise_library = load_exercise_library(os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_library.json"))
         
-        with open(os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_video_map.json"), "r", encoding="utf-8") as f:
-            video_map = json.load(f)
+        # 讀取已經被 yolo_pose_rep_counter.py 填滿數據的 JSON
+        lib_path = os.path.join(SCRIPT_DIR, "knowledge_base", "exercise_library.json")
+        exercise_library = load_exercise_library(lib_path)
             
         filtered = hard_filter_exercises(user_state, exercise_library)
         ranked_exercises = soft_rank_exercises(user_state, filtered["included"])
         
         videos_for_html = []
-        color_themes = ["bg-blue-100 text-blue-600", "bg-green-100 text-green-600", "bg-purple-100 text-purple-600", "bg-orange-100 text-orange-600"]
         selected_top_4 = ranked_exercises[:4]
         
         for idx, ex in enumerate(selected_top_4):
-            ex_id = ex["exercise_id"]
-            raw_vids = video_map.get(ex_id)
-            filenames = [raw_vids] if isinstance(raw_vids, str) else (raw_vids if isinstance(raw_vids, list) else [])
+            # 🔥 關鍵修正：不再讀取 Map 檔案，直接從 JSON 物件中取得 video_filename
+            f_name = ex.get("video_filename")
+            if not f_name: continue
             
-            # 擷取線下算好的精準運動學數據 (Reps/Freq/ROM)
+            # 整理物理數據標籤，供前端 rehab_app.html 的 v.stats.map 使用
             stats_list = [
                 {"icon": "refresh-cw", "text": f"{ex.get('reps', 0)} 次/組"},
                 {"icon": "timer", "text": f"節奏 {float(ex.get('frequency_hz', 0)):.1f}/s"},
                 {"icon": "move-horizontal", "text": f"幅度 {float(ex.get('rom_p5_p95', 0)):.0f}°"}
             ]
 
-            for f_name in filenames:
-                if not f_name: continue
-                
-                # 🔥 關鍵修正：確保 filename 指向原始的 exercise_videos 資料夾
-                # 使用者在跟練時看到的是最清晰的原片，但顯示的數據是 YOLO 算出來的精華
-                clean_vid_path = f"exercise_videos/{f_name}"
-                
-                videos_for_html.append({
-                    "title": ex.get("name_zh", ex_id),
-                    "filename": clean_vid_path,
-                    "tags": [f"NYHA {user_state.nyha}", ex.get("impact_level", "安全")],
-                    "stats": stats_list,
-                    "color": color_themes[idx % len(color_themes)],
-                    "tip": ex.get("gpt_safety_tip") or "請依個人節奏進行，保持呼吸平穩。"
-                })
+            videos_for_html.append({
+                "title": ex.get("name_zh"),
+                "filename": f"exercise_videos/{f_name}",
+                "tags": [f"NYHA {user_state.nyha}", ex.get("impact_level", "低衝擊")],
+                "stats": stats_list,
+                "tip": ex.get("gpt_safety_tip") or "請依個人節奏進行。"
+            })
         
-        # 3. GPT 生成文案
+        # 3. GPT 生成今日總評與計畫
         gpt_summary_text = generate_today_summary(user_condition, risk_assessment, selected_top_4)
         gpt_weekly_plan = generate_7_day_plan(user_condition, risk_assessment, selected_top_4)
 
@@ -143,12 +130,26 @@ def analyze_data():
 
 @app.route('/video_feed')
 def video_feed():
-    """啟動跟練引擎：左側顯示原始影片，右側運算使用者骨架"""
+    """跟練串流：接收影片清單並啟動雙畫面引擎"""
     videos_param = request.args.get('videos', '')
     if not videos_param: return "沒有提供影片", 400
     playlist = videos_param.split(',')
     return Response(generate_frames(playlist), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    print("🚀 心臟衰竭復健運動推薦系統 API 伺服器啟動中...")
+    ui_path = os.path.join(SCRIPT_DIR, "rehab_app.html")
+    file_url = "file:///" + os.path.abspath(ui_path).replace("\\", "/")
+
+    print("\n🚀 AI 心衰復健 API 伺服器啟動完成")
+    print("📍 API：http://127.0.0.1:5000")
+    print("📍 請手動開啟前端：" + file_url + "\n")
+
+    def open_browser():
+        if os.path.exists(ui_path):
+            try:
+                webbrowser.open(file_url)
+            except Exception:
+                pass
+
+    Timer(2.0, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)

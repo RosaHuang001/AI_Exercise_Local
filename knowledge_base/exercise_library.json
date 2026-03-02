@@ -1,170 +1,380 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "exercises": [
     {
-    "exercise_id": "reverse_crunch",
-    "name_zh": "反向捲腹",
-    "posture": "supine",
-    "primary_focus": ["core"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["acute_low_back_pain"],
-    "movement_tags": ["dynamic_flexion"],
-    "sides": "bilateral",
-    "recommended_tempo": "slow"
+      "exercise_id": "auto_7116",
+      "name_zh": "仰臥踢腿",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 40,
+      "frequency_hz": 1.63,
+      "rom_p5_p95": 55.8,
+      "gpt_summary": "這是一個仰臥踢腿的動作，主要是躺著抬腿，運動全身。動作幅度適中，速度不快。建議可以從少量次數開始，慢慢增加。",
+      "gpt_safety_tip": "確保在平坦的地面上進行，以免失去平衡。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "仰臥踢腿.mp4"
     },
     {
-    "exercise_id": "plank_basic",
-    "name_zh": "平板支撐",
-    "posture": "floor_prone",
-    "primary_focus": ["core", "stability"],
-    "impact_level": "low",
-    "intensity_band": "low_to_medium",
-    "balance_requirement": "medium",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II", "III"],
-    "contraindications": ["severe_shoulder_pain"],
-    "movement_tags": ["isometric"],
-    "sides": "bilateral",
-    "recommended_tempo": "hold"
+      "exercise_id": "auto_bd02",
+      "name_zh": "俄羅斯轉體",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 24,
+      "frequency_hz": 1.05,
+      "rom_p5_p95": 42.5,
+      "gpt_summary": "這個動作叫做俄羅斯轉體，主要是全身性的運動，可能會用到腹部和背部的肌肉。動作幅度不大，速度也不快，適合用來作為輕鬆的全身運動。建議從少量次數開始，慢慢增加到影片中的24下。",
+      "gpt_safety_tip": "確保在平穩的地面上進行，避免跌倒。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "俄羅斯轉體.mp4"
     },
     {
-    "exercise_id": "supine_leg_kick",
-    "name_zh": "仰臥踢腿",
-    "posture": "supine",
-    "primary_focus": ["core", "hip_flexor"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["low_back_instability"],
-    "movement_tags": ["dynamic"],
-    "sides": "bilateral",
-    "recommended_tempo": "controlled"
+      "exercise_id": "auto_9f02",
+      "name_zh": "側平板捲腹(右側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 20,
+      "frequency_hz": 0.76,
+      "rom_p5_p95": 124.3,
+      "gpt_summary": "這段影片示範的是一個叫做側平板捲腹的動作，主要運用到全身的肌肉，特別是核心肌群。這個動作的幅度不大，速度也不快，適合用來加強核心穩定性。建議可以從少量次數開始，慢慢增加，並注意動作的正確性。",
+      "gpt_safety_tip": "如果感到不適或疼痛，應立即停止動作並休息。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "側平板捲腹(右側).mp4"
     },
     {
-    "exercise_id": "leg_raise_hold",
-    "name_zh": "抬腳停頓",
-    "posture": "supine",
-    "primary_focus": ["core", "isometric_control"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["low_back_pain"],
-    "movement_tags": ["isometric"],
-    "sides": "bilateral",
-    "recommended_tempo": "hold"
+      "exercise_id": "auto_bc16",
+      "name_zh": "側平板捲腹(左側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 16,
+      "frequency_hz": 0.66,
+      "rom_p5_p95": 71.8,
+      "gpt_summary": "這個動作叫做側平板捲腹，主要是鍛鍊全身的核心肌群。動作幅度不算大，速度也較慢，適合初學者嘗試。建議可以從每次做 8 到 10 下開始，逐漸增加次數。",
+      "gpt_safety_tip": "建議在柔軟的墊子上進行，並確保周圍環境安全無障礙物。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "側平板捲腹(左側).mp4"
     },
     {
-    "exercise_id": "leg_open_close",
-    "name_zh": "抬腳開合",
-    "posture": "supine",
-    "primary_focus": ["core"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["hip_joint_pain"],
-    "movement_tags": ["dynamic"],
-    "sides": "bilateral",
-    "recommended_tempo": "slow"
+      "exercise_id": "auto_d844",
+      "name_zh": "反向捲腹",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 33,
+      "frequency_hz": 1.23,
+      "rom_p5_p95": 91.2,
+      "gpt_summary": "這個動作叫做反向捲腹，主要是針對腹部肌肉的運動。動作幅度不算大，速度也比較慢，適合用來鍛鍊核心肌群。建議可以從少量次數開始，逐漸增加到每天30次左右。",
+      "gpt_safety_tip": "建議在柔軟的墊子上進行，並保持均勻的呼吸。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "反向捲腹.mp4"
     },
     {
-    "exercise_id": "russian_twist",
-    "name_zh": "俄羅斯轉體",
-    "posture": "seated",
-    "primary_focus": ["core", "rotation"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "medium",
-    "equipment": "none",
-    "nyha_allowed": ["I"],
-    "contraindications": ["spinal_rotation_pain"],
-    "movement_tags": ["rotation"],
-    "sides": "bilateral",
-    "recommended_tempo": "controlled"
+      "exercise_id": "auto_2cee",
+      "name_zh": "單邊抬腳",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 27,
+      "frequency_hz": 1.14,
+      "rom_p5_p95": 83.9,
+      "gpt_summary": "這是一個單邊抬腳的動作，主要運用到腿部和核心的肌肉。動作幅度不大，速度也較慢，適合初學者或需要低強度運動的人。建議從每次做 10 到 15 下開始，根據自己的感覺逐漸增加。",
+      "gpt_safety_tip": "確保周圍環境安全，避免有絆倒的物品。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "單邊抬腳.mp4"
     },
     {
-    "exercise_id": "side_plank",
-    "name_zh": "側平板撐腹",
-    "posture": "side_lying",
-    "primary_focus": ["core", "lateral_stability"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "high",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["shoulder_instability"],
-    "movement_tags": ["isometric"],
-    "sides": "unilateral",
-    "recommended_tempo": "hold"
+      "exercise_id": "auto_4f24",
+      "name_zh": "平板支撐",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 0,
+      "frequency_hz": 0.0,
+      "rom_p5_p95": 6.0,
+      "gpt_summary": "這是一個平板支撐的動作，主要是維持姿勢，運用到全身的肌肉來保持穩定。建議從短時間的維持開始，例如10秒，慢慢增加時間，並注意保持呼吸順暢。",
+      "gpt_safety_tip": "開始時可在柔軟的墊子上進行，以保護肘部和膝蓋。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "平板支撐.mp4"
     },
     {
-    "exercise_id": "crunch_elbow",
-    "name_zh": "捲腹碰肘",
-    "posture": "supine",
-    "primary_focus": ["core"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["neck_pain"],
-    "movement_tags": ["dynamic_flexion"],
-    "sides": "bilateral",
-    "recommended_tempo": "controlled"
+      "exercise_id": "auto_516a",
+      "name_zh": "抬腳停頓",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 14,
+      "frequency_hz": 0.69,
+      "rom_p5_p95": 52.9,
+      "gpt_summary": "這個影片示範了一個簡單的抬腳動作，主要是全身的輕微運動。動作幅度不大，速度也較慢，適合用來作為日常的輕度活動。建議可以從每次做 5 到 10 分鐘開始，逐漸增加次數和時間。",
+      "gpt_safety_tip": "建議在有支撐的地方進行，如椅子或牆邊，以增加穩定性。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "抬腳停頓.mp4"
     },
     {
-    "exercise_id": "bird_dog",
-    "name_zh": "鳥狗式",
-    "posture": "quadruped",
-    "primary_focus": ["core", "balance"],
-    "impact_level": "low",
-    "intensity_band": "low",
-    "balance_requirement": "medium",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II", "III"],
-    "contraindications": [],
-    "movement_tags": ["stability"],
-    "sides": "unilateral",
-    "recommended_tempo": "slow"
+      "exercise_id": "auto_b4a8",
+      "name_zh": "抬腳開合",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 20,
+      "frequency_hz": 0.97,
+      "rom_p5_p95": 45.9,
+      "gpt_summary": "這段影片示範的是一種抬腳開合的動作，主要運動全身，動作幅度不大，速度也不快。建議可以從少量次數開始，慢慢增加，適合用來輕鬆活動身體。",
+      "gpt_safety_tip": "建議在平坦的地面上進行，並確保周圍沒有障礙物。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "抬腳開合.mp4"
     },
     {
-    "exercise_id": "single_leg_raise",
-    "name_zh": "單邊抬腳",
-    "posture": "supine",
-    "primary_focus": ["core"],
-    "impact_level": "low",
-    "intensity_band": "low_to_medium",
-    "balance_requirement": "low",
-    "equipment": "none",
-    "nyha_allowed": ["I", "II"],
-    "contraindications": ["hip_pain"],
-    "movement_tags": ["unilateral"],
-    "sides": "unilateral",
-    "recommended_tempo": "slow"
+      "exercise_id": "auto_7540",
+      "name_zh": "捲腹碰趾",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 18,
+      "frequency_hz": 0.81,
+      "rom_p5_p95": 33.6,
+      "gpt_summary": "這個影片示範的是一個輕鬆的全身運動，主要是捲腹並碰觸腳趾的動作。這個動作能夠幫助你活動全身，特別是腹部和腿部的肌肉。建議從少量次數開始，慢慢增加到你覺得舒適的程度。",
+      "gpt_safety_tip": "開始前，請確保周圍環境安全，並在感到不適時立即停止。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "捲腹碰趾.mp4"
     },
     {
-    "exercise_id": "boat_position",
-    "name_zh": "船臥核心動作",
-    "posture": "seated_recline",
-    "primary_focus": ["core"],
-    "impact_level": "low",
-    "intensity_band": "medium",
-    "balance_requirement": "high",
-    "equipment": "none",
-    "nyha_allowed": ["I"],
-    "contraindications": ["balance_disorder", "low_back_pain"],
-    "movement_tags": ["isometric", "dynamic"],
-    "sides": "bilateral",
-    "recommended_tempo": "slow_controlled"
+      "exercise_id": "auto_1122",
+      "name_zh": "躺臥單邊捲腹(右側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 28,
+      "frequency_hz": 1.13,
+      "rom_p5_p95": 60.2,
+      "gpt_summary": "這個影片示範的是躺著進行的單邊捲腹運動，主要運用到腹部肌肉。動作幅度不大，速度也不快，適合用來輕鬆地活動全身。建議可以從少量次數開始，逐漸增加到影片中的頻率。",
+      "gpt_safety_tip": "建議在開始前做一些簡單的熱身運動，避免拉傷。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "躺臥單邊捲腹(右側).mp4"
+    },
+    {
+      "exercise_id": "auto_097b",
+      "name_zh": "躺臥單邊捲腹(左側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 30,
+      "frequency_hz": 1.16,
+      "rom_p5_p95": 66.8,
+      "gpt_summary": "這個影片示範的是一個躺著進行的左側捲腹運動，主要運用到腹部的肌肉。動作幅度不大，速度也不快，適合用來輕鬆地活動身體。建議從少量次數開始，逐漸增加到影片中的30下。",
+      "gpt_safety_tip": "確保在平坦且舒適的表面上進行，以保護背部。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "躺臥單邊捲腹(左側).mp4"
+    },
+    {
+      "exercise_id": "auto_6951",
+      "name_zh": "躺臥腳踏車(慢速)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 30,
+      "frequency_hz": 1.21,
+      "rom_p5_p95": 71.2,
+      "gpt_summary": "這段影片示範的是一種躺臥腳踏車運動，主要是全身運動，動作幅度不大且速度較慢。建議可以從少量次數開始，逐漸增加到30下，並注意動作的流暢性。",
+      "gpt_safety_tip": "確保在平穩的地面上進行，避免跌倒或受傷。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "躺臥腳踏車(慢速).mp4"
+    },
+    {
+      "exercise_id": "auto_b7e2",
+      "name_zh": "鳥狗式(右側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 16,
+      "frequency_hz": 0.77,
+      "rom_p5_p95": 56.3,
+      "gpt_summary": "這是一個叫做『鳥狗式』的動作，主要是用來訓練全身的平衡和核心肌群。動作幅度不大，適合初學者或需要輕量運動的人。建議從每次做 8 到 10 下開始，慢慢增加次數。",
+      "gpt_safety_tip": "確保在平穩的地面上進行，以避免跌倒風險。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "鳥狗式(右側).mp4"
+    },
+    {
+      "exercise_id": "auto_a2c3",
+      "name_zh": "鳥狗式(左側)",
+      "posture": "unknown",
+      "primary_focus": [
+        "unknown"
+      ],
+      "impact_level": "low",
+      "reps": 15,
+      "frequency_hz": 0.7,
+      "rom_p5_p95": 62.8,
+      "gpt_summary": "這是一個叫做鳥狗式的運動，主要是用來鍛鍊全身的穩定性和平衡感。動作不大，速度也不快，適合用來作為日常的輕度運動。建議可以從每組15下開始，慢慢增加次數。",
+      "gpt_safety_tip": "確保在平穩的地面上進行，並在感到不適時停止。",
+      "nyha_allowed": [
+        "I",
+        "II"
+      ],
+      "contraindications": [],
+      "movement_tags": [
+        "auto_generated"
+      ],
+      "sides": "bilateral",
+      "recommended_tempo": "slow",
+      "video_filename": "鳥狗式(左側).mp4"
     }
   ]
 }
