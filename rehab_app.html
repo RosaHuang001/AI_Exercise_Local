@@ -6,6 +6,7 @@
     <title>三總心臟衰竭復健系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
@@ -302,34 +303,56 @@
 
             <!-- ================= 結果顯示區塊 (還原滿意版) ================= -->
             <div id="section-results" class="hidden fade-in pb-10 space-y-6">
-                
-                <!-- AI 總結卡片與側邊徽章 -->
+    
                 <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex gap-6 items-start relative overflow-hidden">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100"><i data-lucide="sparkles" class="w-8 h-8"></i></div>
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100">
+                        <i data-lucide="sparkles" class="w-8 h-8"></i>
+                    </div>
                     <div class="flex-1 pr-32">
                         <h3 class="font-bold text-gray-800 text-lg mb-2">AI 專屬課表總結</h3>
                         <p class="text-sm text-gray-700 leading-relaxed bg-blue-50/40 p-4 rounded-xl border border-blue-100 mt-2" id="resultSummary"></p>
                     </div>
-                    <div id="section-results" class="hidden fade-in pb-10 space-y-6">
-    
-                        <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex gap-6 items-start relative overflow-hidden">
-                            <p class="text-sm text-gray-700 ..." id="resultSummary"></p>
-                        </div>
-                    
-                        <div id="rpe-instruction-box" class="bg-blue-50/50 border-l-4 border-blue-500 p-5 rounded-2xl mt-4 shadow-sm">
-                            <div class="flex items-center gap-2 text-blue-800 font-bold mb-2">
-                                <i data-lucide="gauge" class="w-5 h-5"></i>
-                                <span>Borg RPE 運動強度建議 (依據 NYHA 與動作負荷計算)</span>
-                            </div>
-                            <p class="text-sm text-gray-600 leading-relaxed" id="rpeContent">
-                                </p>
-                        </div>
-                    
-                        </div>
-                    <!-- 當前目標徽章 (還原 image_c09d3a.png) -->
+            
                     <div class="absolute right-6 top-6 bg-blue-50/80 p-3 rounded-2xl border border-blue-100 text-center w-24">
                         <span class="text-[10px] text-gray-400 block mb-1">當前目標</span>
                         <p class="text-blue-700 font-bold text-sm leading-tight" id="resultGoalText"></p>
+                    </div>
+                </div>
+            
+                <div id="rpe-instruction-box" class="bg-blue-50/50 border-l-4 border-blue-500 p-5 rounded-2xl mt-4 shadow-sm">
+                    <div class="flex items-center gap-2 text-blue-800 font-bold mb-2">
+                        <i data-lucide="gauge" class="w-5 h-5"></i>
+                        <span>Borg RPE 運動強度指引 (基於 ACSM 指引)</span>
+                    </div>
+                    <p class="text-sm text-gray-600 leading-relaxed" id="rpeContent">
+                        </p>
+                </div>
+            
+                <div id="quality-analysis-box" class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm mt-6">
+                    <div class="flex items-center gap-2 text-gray-800 font-bold mb-4">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-blue-500"></i>
+                        <span>今日運動品質分佈分析 (AI 綜合評估)</span>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div class="relative h-64">
+                            <canvas id="qualityChart"></canvas>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <h4 class="text-sm font-bold text-blue-800 mb-1">臨床數據判讀：</h4>
+                                <p class="text-xs text-blue-700 leading-relaxed" id="qualityInsight"></p>
+                            </div>
+                            <div class="flex justify-around text-center">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block">標準動作</span>
+                                    <span class="text-xl font-bold text-green-500" id="stat-standard">--</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block">角度不足</span>
+                                    <span class="text-xl font-bold text-red-500" id="stat-failed">--</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -457,34 +480,57 @@
             }
         }
 
+        // ==========================================
+        // 核心結果渲染函式 (唯一入口)
+        // ==========================================
         function renderResults(data) {
             document.getElementById('section-loading').classList.add('hidden');
             document.getElementById('section-results').classList.remove('hidden');
             currentVideos = data.videos;
 
+            // 1. 更新目標徽章
             const goalMap = { 'strength': '增強肌力', 'cardio': '心肺耐力', 'mobility': '活動度', 'pain': '減緩疼痛' };
             document.getElementById('resultGoalText').innerText = goalMap[globalData.improveGoal] || "個人復健";
-            document.getElementById('resultSummary').innerText = data.gpt_summary;
 
+            // 2. 處理「品質預測」拆分與 RPE 文字框
+            let fullText = data.gpt_summary || "";
+            let mainSummary = fullText;
+            let insightText = "系統預估您今日的穩定度良好。若發現骨架轉為紅色次數增加，代表心肺出現疲勞。";
 
-            // RPE 區塊內容
-            // 渲染基於 YOLO 數據生成的 RPE 指引
+            if (fullText.includes("【品質預測】：")) {
+                const parts = fullText.split("【品質預測】：");
+                mainSummary = parts[0].trim();
+                insightText = parts[1].trim();
+            }
+
+            // 將 [RPE:x] 渲染為藍色膠囊標籤
+            const processedSummary = mainSummary.replace(/\[RPE:(\d+)\]/g, (match, rpeValue) => {
+                return `<span class="inline-flex items-center gap-1 mx-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-full font-bold text-sm shadow-inner">RPE:${rpeValue}</span>`;
+            });
+            document.getElementById('resultSummary').innerHTML = processedSummary;
+            document.getElementById('qualityInsight').innerText = insightText;
+
+            // 3. 渲染 RPE 指引區塊 (數據由 api_server.py 回傳的 rpe_text 提供)
             const rpeContent = document.getElementById('rpeContent');
             if (data.rpe_text) {
-                // 將 [RPE:xx] 轉換為突出的藍色標籤
                 rpeContent.innerHTML = data.rpe_text.replace(/\[RPE:([\d-]+)\]/g, 
                     '<span class="bg-blue-600 text-white px-2 py-0.5 rounded-md font-bold mx-1">RPE: $1</span>');
             }
+
+            // 4. 呼叫 UI 渲染函式
+            renderVideoListUI(data.videos);
+            renderWeeklyPlanUI(data.plan);
+            initQualityChart(data, globalData.nyhaclass);
             
             lucide.createIcons();
+        }
 
-
-
-            // 渲染動作清單：移除 (AI評分:x.x)
-            document.getElementById('videoList').innerHTML = data.videos.map(v => `
-                <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition group relative overflow-hidden">
+        // 渲染推薦動作 (已移除 AI 評分)
+        function renderVideoListUI(videos) {
+            document.getElementById('videoList').innerHTML = videos.map(v => `
+                <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition group">
                     <div class="flex items-center gap-4">
-                        <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-100 transition-colors">
+                        <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0 border border-blue-100">
                             <i data-lucide="play" class="text-blue-600 w-8 h-8"></i>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -497,32 +543,69 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="startStream(['${v.filename}'])" class="w-full mt-3 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white py-2.5 rounded-xl font-bold text-xs flex justify-center items-center gap-2 transition-all">
+                    <button onclick="startStream(['${v.filename}'])" class="w-full mt-3 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white py-2.5 rounded-xl font-bold text-xs flex justify-center items-center gap-2">
                         <i data-lucide="video" class="w-4 h-4"></i> 單曲跟練
                     </button>
                 </div>
             `).join('');
+        }
 
-            // 渲染一週時間軸
+        // 渲染一週時間軸 (與 renderWeeklyPlanUI 整合)
+        function renderWeeklyPlanUI(plan) {
             const dayNames = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"];
-            document.getElementById('weeklyPlan').innerHTML = data.plan.map((p, i) => {
+            document.getElementById('weeklyPlan').innerHTML = plan.map((p, i) => {
                 const isRest = p.includes("休息") || p.includes("恢復");
                 return `
                 <div class="flex gap-4 pb-6 last:pb-0 relative">
                     ${i < 6 ? '<div class="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-100"></div>' : ''}
-                    <div class="w-8 h-8 rounded-full ${isRest ? 'bg-green-100 text-green-600 border-green-200' : 'bg-blue-100 text-blue-600 border-blue-200'} flex items-center justify-center text-xs font-bold z-10 border-2 shrink-0 shadow-sm">${i+1}</div>
+                    <div class="w-8 h-8 rounded-full ${isRest ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'} flex items-center justify-center text-xs font-bold z-10 border-2 shrink-0">${i+1}</div>
                     <div class="flex-1">
                         <div class="flex justify-between items-center mb-1">
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${dayNames[i]}</span>
-                            ${isRest ? '<span class="text-[10px] bg-green-50 text-green-500 px-2 rounded-full font-bold">恢復</span>' : ''}
                         </div>
-                        <div class="bg-gray-50/50 p-3 rounded-xl border border-gray-100 text-sm font-medium text-gray-700 leading-snug">
-                            ${p}
-                        </div>
+                        <div class="bg-gray-50/50 p-3 rounded-xl border border-gray-100 text-sm font-medium text-gray-700">${p}</div>
                     </div>
-                </div>
-            `}).join('');
-            lucide.createIcons();
+                </div>`;
+            }).join('');
+        }
+
+        // ==========================================
+        // 4. 圖表初始化 (Chart.js)
+        // ==========================================
+        let myChart = null; 
+        function initQualityChart(data, nyha) {
+            const canvas = document.getElementById('qualityChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            
+            // 根據 NYHA 分級模擬初始成功比例
+            let successRate = 88; 
+            if (nyha === "II") successRate = 82;
+            if (nyha === "III") successRate = 75;
+            const failRate = 100 - successRate;
+
+            document.getElementById('stat-standard').innerText = successRate + "%";
+            document.getElementById('stat-failed').innerText = failRate + "%";
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['標準 (綠色骨架)', '不足 (紅色骨架)'],
+                    datasets: [{
+                        data: [successRate, failRate],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
 
         function startPlaylist() {

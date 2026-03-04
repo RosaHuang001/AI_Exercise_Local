@@ -345,6 +345,9 @@ def generate_today_summary(user_condition: dict, risk_assessment: dict, selected
 4. 語氣限制：不假設病患已經做過這些動作；不可使用命令語，請用「可參考」、「建議從…開始」；不做醫療診斷，不給治療處方。
 5. 嚴禁提及 AI、模型、YOLO、演算法或分析流程。
 6. 絕對不要列點，請直接輸出一段自然流暢、充滿同理心的口語說明。
+7. **動作品質預測 (New)**：請根據使用者的年齡 {user_condition.get('age')}、血壓 {user_condition.get('sysBP')} mmHg、以及 NYHA {nyha} 分級，產出一句約 40 字內的「疲勞預警」。
+    - **格式限制**：請將這句話放在整個總結的最末端，並用「【品質預測】：」作為開頭。
+    - **邏輯參考**：若年齡 > 65 或 NYHA III，提醒肌肉耐力可能較早衰退；若血壓偏高，提醒注意運動中的呼吸調節以維持動作穩定度。
 """
 
     try:
@@ -410,17 +413,17 @@ def generate_rpe_instruction(user_condition: dict, selected_exercises: list) -> 
     # 2. 找出推薦動作中的最大衝擊力 (YOLO 辨識數據)
     max_bw = 0.0
     for ex in selected_exercises:
-        # 假設資料結構中包含 impact_bw_high
-        bw_val = float(ex.get('stats', [{}])[0].get('text', '0').replace('倍體重', '') if ex.get('stats') else 0)
+        # 從 impact_bw_high 欄位直接獲取，避免解析 stats 陣列文字出錯
+        bw_val = float(ex.get('impact_bw_high', 1.2)) 
         if bw_val > max_bw: max_bw = bw_val
 
-    # 3. 判定邏輯：NYHA III 級強制鎖定保守強度
-    if nyha == "III":
+    # 3. 判定邏輯：NYHA III 級強制保護邏輯
+    if nyha == "III" or "III" in nyha:
         rpe_range = "[RPE:11] (輕鬆至輕微喘)"
         safety_note = "由於您的心臟功能分級為 Class III，建議採取最保守強度。"
     elif max_bw > 1.4:
         rpe_range = "[RPE:11]-12 (微喘但可輕鬆對話)"
-        safety_note = "考量今日動作對關節負荷較大，強度不宜過高。"
+        safety_note = "考量今日動作負荷較大，強度不宜過高。"
     else:
         rpe_range = "[RPE:11]-13 (微喘但可持續對話)"
         safety_note = "目前動作負荷適中，請維持在目標強度區間。"

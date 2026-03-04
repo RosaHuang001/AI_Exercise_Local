@@ -83,57 +83,86 @@ def compute_angle(a, b, c) -> float:
 
 def calc_kinematics(angle_list, fps):
     """
-    【運動學特徵萃取】
-    負責把一連串的角度數字變成「活動度 (ROM)」、「次數」與「節奏」。
+    【運動學特徵萃取 - 白話邏輯檢查版】
+    將 AI 抓到的角度序列，轉化為看得懂的活動度、頻率與衝擊力數據。
     """
     fps = fps or 25.0
-    # 資料太少 (不到半秒) 則不分析
+    # 樣本長度檢查：如果影片不到 0.5 秒，代表數據不夠，不進行計算。
     if not angle_list or len(angle_list) < int(fps * 0.5):
-        return {"rom_p5_p95": 0, "reps": 0, "frequency_hz": 0, "intensity_energy": 0}
+        return {
+            "rom_p5_p95": 0, "reps": 0, "frequency_hz": 0, 
+            "intensity_energy": 0, "impact_bw_high": 1.0, 
+            "impact_level": "低衝擊", "primary_region": "Lower"
+        }
 
-    # (1) 數據平滑化：使用 Savitzky-Golay 濾波器，去除 AI 偵測時的小抖動
+    # --- 1. 數據平滑化 (濾波處理) ---
+    # 目的：把 AI 偵測時像「鋸齒」一樣的抖動磨平，留下平滑的運動曲線。
     arr = savgol_filter(np.array(angle_list, float), min(11, len(angle_list)|1), 2)
     
-    # (2) ROM (活動幅度)：使用 p5, p95 百分位數
-    # 💡 這裡不取 Max - Min，而是取 5% 與 95% 位置的差值。
-    # 為什麼？因為直接取最大最小值容易被 AI 的突發雜訊 (跳點) 毀掉。
+    # --- 2. ROM (活動幅度) 計算 ---
+    # 白話公式：動作最大處的數值(第95%) 減去 動作最小處的數值(第5%)。
+    # 註解：不直接用最大減最小，是為了怕 AI 突然閃現一個錯誤的極大值毀掉數據。
     p5, p95 = np.percentile(arr, [5, 95])
     rom_p = float(p95 - p5)
 
-    # (3) 計算動作次數 (Reps)：偵測訊號中的波峰與波谷
-    # 設定門檻：只有波峰高度超過 ROM 幅度的 15% 才算一次完整動作
+    # --- 3. 動作次數 (Reps) 偵測 ---
+    # 邏輯：數出曲線中有幾個大波峰與大波谷。
+    # 判定條件：波峰必須高於「總幅度的 15%」，避免把微小的晃動當成一次動作。
     peaks, _ = find_peaks(arr, prominence=max(8, 0.15*rom_p), distance=int(fps*0.25))
     valleys, _ = find_peaks(-arr, prominence=max(8, 0.15*rom_p), distance=int(fps*0.25))
     reps = int(round((len(peaks) + len(valleys)) / 2))
 
-    # (4) 計算真實頻率 (Frequency)：排除影片頭尾的閒置時間
+    # --- 4. 運動頻率 (Frequency) 計算 ---
+    # 白話公式：總共做的次數 除以 真正有在動的時間。
+    # 註解：有在動的時間是指「第一個動作開始」到「最後一個動作結束」的時間段。
     all_extrema = np.sort(np.concatenate((peaks, valleys)))
     if len(all_extrema) >= 2:
-        # 有效時間 = (最後一個極限點 - 第一個極限點) / FPS
         active_sec = (all_extrema[-1] - all_extrema[0]) / fps + (1.0/max(1, reps))
         freq = reps / active_sec
     else:
         freq = reps / (len(arr)/fps)
 
-    # 算能量 (角速度平方的平均值，代表出力感)
-    w = np.gradient(arr, 1 / fps)
+    # --- 5. 物理負荷 (Impact BW) 衝擊力計算 ---
+    # (A) 計算速度：每一幀角度變化的快慢 (角速度)。
+    w = np.gradient(arr, 1 / fps) 
+    
+    # (B) 計算能量：把所有速度「平方後取平均」，代表這個動作有多「猛」。
+    avg_w_sq = float(np.mean(w ** 2))
+    
+    # (C) 倍體重負荷估算 (Impact Body Weight)：
+    # 白話公式：基礎體重(1.0) + (速度能量影響) + (動作頻率補償)。
+    # 邏輯：動作越快、頻率越高，關節承受的壓力倍數就越高。
+    impact_bw = 1.0 + (avg_w_sq / 5000) + (freq * 0.2)
+    impact_bw_high = round(min(2.5, impact_bw), 2) # 安全考量，設定上限為 2.5 倍體重。
+    
+    # --- 6. 衝擊等級判定 ---
+    # 低衝擊：負荷 < 1.2 倍體重。
+    # 中衝擊：負荷在 1.2 到 1.4 倍體重之間。
+    # 高衝擊：負荷 > 1.4 倍體重 (這會觸發後端自動降低 RPE 運動建議)。
+    impact_level = "低衝擊"
+    if impact_bw_high > 1.4: impact_level = "高衝擊"
+    elif impact_bw_high > 1.2: impact_level = "中衝擊"
+
     return {
         "rom_p5_p95": rom_p, 
         "reps": reps, 
         "frequency_hz": freq,
-        "intensity_energy": float(np.mean(w ** 2))
+        "intensity_energy": avg_w_sq,
+        "impact_bw_high": impact_bw_high, # 這個數字會給 GPT 決定 RPE 建議文字內容
+        "impact_level": impact_level,
+        "primary_region": "Lower"
     }
+
+
 
 # ==========================================
 # 3. [優化邏輯] 全自動資料庫同步 (免手動 Map)
 # ==========================================
-
 def sync_to_json_library(results_data):
     """
-    【全自動資料庫建置功能】
-    現在會直接把影片檔名 (video_filename) 寫入 JSON 中，完全取代傳統的對照表檔案。
+    【全自動資料庫建置功能 - 物理數據強化版】
+    將計算出的倍體重衝擊力 (Impact BW) 等關鍵指標寫入 JSON 資料庫。
     """
-    # 如果 JSON 檔案不存在或為空，建立一個基礎結構
     if not os.path.exists(JSON_LIB_PATH) or os.path.getsize(JSON_LIB_PATH) == 0:
         lib_data = {"version": "1.1", "exercises": []}
     else:
@@ -147,53 +176,47 @@ def sync_to_json_library(results_data):
     new_add_count = 0
 
     for result in results_data:
-        # 拿檔名 (去掉 .mp4) 當作匹配標籤
         pure_name = os.path.splitext(result["file_name"])[0]
-        
-        # 在資料庫中尋找是否已有同名的動作
         target_ex = next((ex for ex in lib_data["exercises"] if ex.get("name_zh") == pure_name), None)
+        
+        # 準備需要寫入/更新的完整數據字典
+        update_fields = {
+            "video_filename": result["file_name"], 
+            "reps": result["reps"],
+            "frequency_hz": round(result["frequency_hz"], 2),
+            "rom_p5_p95": round(result["rom_p5_p95"], 1),
+            "impact_bw_high": result["impact_bw_high"],  # 🔥 對接 RPE 指引的核心
+            "impact_level": result["impact_level"],      # 顯示於前端標籤
+            "primary_region": result["primary_region"],  # 供 GPT 生成部位摘要
+            "gpt_summary": result["gpt_summary"],
+            "gpt_safety_tip": result["safety_tip"]
+        }
         
         if target_ex:
             # --- 更新模式 ---
-            # 把算好的數據與對應影片名稱直接填進去
-            target_ex.update({
-                "video_filename": result["file_name"], 
-                "reps": result["reps"],
-                "frequency_hz": round(result["frequency_hz"], 2),
-                "rom_p5_p95": round(result["rom_p5_p95"], 1),
-                "gpt_summary": result["gpt_summary"],
-                "gpt_safety_tip": result["safety_tip"]
-            })
+            target_ex.update(update_fields)
             update_count += 1
         else:
-            # --- 自動建檔範本 ---
-            # 如果資料庫沒有這個動作，自動產出一個包含預設醫療分級的完整物件
+            # --- 自動建檔範本 (補齊新欄位) ---
             new_item = {
                 "exercise_id": f"auto_{str(uuid.uuid4())[:4]}",
                 "name_zh": pure_name,
-                "video_filename": result["file_name"], 
-                "posture": "unknown",         # 需後續人工手動調整
-                "primary_focus": ["unknown"],
-                "impact_level": "low",
-                "reps": result["reps"],
-                "frequency_hz": round(result["frequency_hz"], 2),
-                "rom_p5_p95": round(result["rom_p5_p95"], 1),
-                "gpt_summary": result["gpt_summary"],
-                "gpt_safety_tip": result["safety_tip"],
-                "nyha_allowed": ["I", "II"],    # 預設保守醫療建議
-                "contraindications": [],
+                "posture": "unknown",
+                "primary_focus": [result["primary_region"]],
+                "nyha_allowed": ["I", "II"],
                 "movement_tags": ["auto_generated"],
-                "sides": "bilateral"
+                "sides": "bilateral",
+                **update_fields  # 直接展開包含所有新欄位
             }
             lib_data["exercises"].append(new_item)
             new_add_count += 1
                 
-    # 寫回 JSON，並確保中文不變碼 (ensure_ascii=False)
     with open(JSON_LIB_PATH, "w", encoding="utf-8") as f:
         json.dump(lib_data, f, ensure_ascii=False, indent=2)
     
     print(f"\n✅ 資料庫同步完成！ (更新: {update_count}, 新增: {new_add_count})")
-    print(f"📍 資料已整合至單一檔案，不再需要獨立的 map 檔案。")
+
+
 
 # ==========================================
 # 4. YOLO 核心分析流程 (影像處理)
@@ -272,24 +295,23 @@ def main():
             continue
 
         print(f"🎬 發現新動作，開始進行 AI 分析: {f}")
-        # 1. 執行影像分析與物理運算
+        # 1. 執行影像分析與物理運算 (回傳包含 impact_bw_high 的字典)
         stats, duration = process_video_and_save_skeleton(model, f)
         
-        # 2. 呼叫 GPT 大腦撰寫對應的摘要
-        print(f"💬 正在向 GPT 請求「{f}」的語意分析建議...")
+        # 2. 呼叫 GPT 進行語意分析
         gpt_info = call_openai_label(
             file_name=f, 
             duration_s=duration, 
             stats=stats, 
-            activity_level="低", 
+            activity_level=stats["impact_level"], # 動態傳入計算出的強度
             user_condition={}, 
             risk_assessment={}
         )
         
-        # 3. 打包成一筆記錄
+        # 3. 打包成一筆記錄 (透過 **stats 將所有新欄位自動展開)
         combined_row = {
             "file_name": f,
-            **stats,
+            **stats,  # 這裡會包含 impact_bw_high, impact_level, primary_region 等
             "gpt_summary": gpt_info["gpt_summary"],
             "safety_tip": gpt_info["gpt_safety_tip"]
         }

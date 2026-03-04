@@ -128,20 +128,27 @@ def analyze_data():
             })
 
         # 3. GPT 今日總評與計畫
-        gpt_summary_text = generate_today_summary(
-            user_condition, risk_assessment, selected_top_4
-        )
-        gpt_weekly_plan = generate_7_day_plan(
-            user_condition, risk_assessment, selected_top_4
-        )
+        # (1) 呼叫 GPT 模組生成摘要與計畫
+        gpt_summary_text = generate_today_summary(user_condition, risk_assessment, selected_top_4)
+        gpt_weekly_plan = generate_7_day_plan(user_condition, risk_assessment, selected_top_4)
+        
+        # (2) 新增：生成 RPE 專業指引文字
+        # 這是為了對接前端的 id="rpeContent"
+        try:
+            from gpt_summary import generate_rpe_instruction
+            rpe_instruction = generate_rpe_instruction(user_condition, selected_top_4)
+        except ImportError:
+            rpe_instruction = "根據 ACSM 指引，請維持在 [RPE:11-13] 的運動強度。"
 
+        # (3) 整合回傳資料
         return jsonify({
             "status": "success",
             "videos": videos_for_html,
             "plan": gpt_weekly_plan,
             "gpt_summary": gpt_summary_text,
+            "rpe_text": rpe_instruction  # 必須回傳此欄位，前端紅框才會有字
         })
-
+        
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
