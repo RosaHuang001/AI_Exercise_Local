@@ -160,61 +160,62 @@ def calc_kinematics(angle_list, fps):
 # ==========================================
 def sync_to_json_library(results_data):
     """
-    【全自動資料庫建置功能 - 物理數據強化版】
-    將計算出的倍體重衝擊力 (Impact BW) 等關鍵指標寫入 JSON 資料庫。
+    【全自動資料庫建置 - 醫學門檻增強版】
+    將計算出的物理指標與「三段式 ROM 門檻」寫入 JSON。
     """
     if not os.path.exists(JSON_LIB_PATH) or os.path.getsize(JSON_LIB_PATH) == 0:
-        lib_data = {"version": "1.1", "exercises": []}
+        lib_data = {"version": "1.2", "exercises": []}
     else:
         with open(JSON_LIB_PATH, "r", encoding="utf-8") as f:
             try:
                 lib_data = json.load(f)
             except:
-                lib_data = {"version": "1.1", "exercises": []}
-
-    update_count = 0
-    new_add_count = 0
+                lib_data = {"version": "1.2", "exercises": []}
 
     for result in results_data:
         pure_name = os.path.splitext(result["file_name"])[0]
         target_ex = next((ex for ex in lib_data["exercises"] if ex.get("name_zh") == pure_name), None)
+
         
-        # 準備需要寫入/更新的完整數據字典
-        update_fields = {
-            "video_filename": result["file_name"], 
-            "reps": result["reps"],
-            "frequency_hz": round(result["frequency_hz"], 2),
-            "rom_p5_p95": round(result["rom_p5_p95"], 1),
-            "impact_bw_high": result["impact_bw_high"],  # 🔥 對接 RPE 指引的核心
-            "impact_level": result["impact_level"],      # 顯示於前端標籤
-            "primary_region": result["primary_region"],  # 供 GPT 生成部位摘要
-            "gpt_summary": result["gpt_summary"],
-            "gpt_safety_tip": result["safety_tip"]
+        # 💡 新增：計算三段式 ROM 門檻
+        # 以教練角度為 100% 基準，依 NYHA 分級給予不同寬鬆限度
+        coach_rom = round(result["rom_p5_p95"], 1)
+        rom_standards = {
+            "class_i": round(coach_rom * 0.90, 1),   # I級：需達到教練的 90%
+            "class_ii": round(coach_rom * 0.75, 1),   # II級：需達到教練的 75%
+            "class_iii": round(coach_rom * 0.60, 1),   # III級：需達到教練的 60%
         }
-        
+
+        update_fields = {
+            "video_filename": result["file_name"],
+            "reps": result["reps"],                  # 保留次數
+            "frequency_hz": round(result["frequency_hz"], 2),
+            "rom_p5_p95": coach_rom,               # 保留教練角度
+            "rom_standards": rom_standards,        # 寫入多級門檻資料
+            "impact_bw_high": result["impact_bw_high"], # 保留衝擊力
+            "impact_level": result["impact_level"], # 保留衝擊等級
+            "primary_region": result["primary_region"], # 保留部位摘要
+            "gpt_summary": result["gpt_summary"],      # 保留 GPT 摘要
+            "gpt_safety_tip": result["safety_tip"],    # 保留 GPT 安全提示
+        }
+
         if target_ex:
-            # --- 更新模式 ---
             target_ex.update(update_fields)
-            update_count += 1
         else:
-            # --- 自動建檔範本 (補齊新欄位) ---
             new_item = {
-                "exercise_id": f"auto_{str(uuid.uuid4())[:4]}",
-                "name_zh": pure_name,
+                "exercise_id": f"auto_{str(uuid.uuid4())[:4]}", # 生成唯一 ID
+                "name_zh": pure_name,                # 保留原動作名稱
                 "posture": "unknown",
-                "primary_focus": [result["primary_region"]],
-                "nyha_allowed": ["I", "II"],
-                "movement_tags": ["auto_generated"],
-                "sides": "bilateral",
-                **update_fields  # 直接展開包含所有新欄位
+                "primary_focus": [result["primary_region"]], # 保留部位摘要
+                "nyha_allowed": ["I", "II", "III"], # 允許所有 NYHA 分級
+                **update_fields,                  # 直接展開包含所有新欄位
             }
             lib_data["exercises"].append(new_item)
-            new_add_count += 1
-                
+
     with open(JSON_LIB_PATH, "w", encoding="utf-8") as f:
         json.dump(lib_data, f, ensure_ascii=False, indent=2)
-    
-    print(f"\n✅ 資料庫同步完成！ (更新: {update_count}, 新增: {new_add_count})")
+
+    print(f"✅ 資料庫已同步，已為 {len(results_data)} 個動作建立三段式醫學門檻。")
 
 
 

@@ -50,6 +50,24 @@
             color: #1d4ed8;
             box-shadow: 0 0 0 1px #3b82f6;
         }
+        /* 影片縮圖容器：固定比例、裁切 */
+        .video-thumb-box {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 1rem;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .video-thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body class="text-gray-700 flex items-center justify-center p-4">
@@ -63,7 +81,12 @@
                 <i data-lucide="activity" class="w-6 h-6"></i>
                 <h1 class="text-xl font-bold tracking-wider">三總心臟衰竭復健系統</h1>
             </div>
-            <div class="text-sm opacity-80" id="current-date"></div>
+            <div class="flex items-center gap-4">
+                <button type="button" onclick="openReportPage()" class="text-sm font-medium opacity-90 hover:opacity-100 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition">
+                    <i data-lucide="award" class="w-4 h-4"></i> 成就紀錄
+                </button>
+                <span class="text-sm opacity-80" id="current-date"></span>
+            </div>
         </header>
 
         <!-- 進度指示 -->
@@ -80,6 +103,19 @@
         </div>
 
         <main class="flex-1 p-6 relative overflow-y-auto no-scrollbar">
+
+            <div id="dashboard-header" class="mb-6 flex justify-between items-end">
+                <div>
+                    <p id="current-date-text" class="text-xs font-bold text-blue-500 mb-1 uppercase tracking-widest"></p>
+                    </div>
+                <div class="bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span class="text-[10px] font-bold text-gray-500" id="streak-text">連續復健 0 天</span>
+                </div>
+            </div>
 
             <!-- ================= 步驟 1：基本資料 (還原滿意版) ================= -->
             <div id="section-step-1" class="max-w-2xl mx-auto py-4 fade-in">
@@ -328,34 +364,6 @@
                         </p>
                 </div>
             
-                <div id="quality-analysis-box" class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm mt-6">
-                    <div class="flex items-center gap-2 text-gray-800 font-bold mb-4">
-                        <i data-lucide="pie-chart" class="w-5 h-5 text-blue-500"></i>
-                        <span>今日運動品質分佈分析 (AI 綜合評估)</span>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-8 items-center">
-                        <div class="relative h-64">
-                            <canvas id="qualityChart"></canvas>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                <h4 class="text-sm font-bold text-blue-800 mb-1">臨床數據判讀：</h4>
-                                <p class="text-xs text-blue-700 leading-relaxed" id="qualityInsight"></p>
-                            </div>
-                            <div class="flex justify-around text-center">
-                                <div>
-                                    <span class="text-[10px] text-gray-400 block">標準動作</span>
-                                    <span class="text-xl font-bold text-green-500" id="stat-standard">--</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-gray-400 block">角度不足</span>
-                                    <span class="text-xl font-bold text-red-500" id="stat-failed">--</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="grid md:grid-cols-2 gap-8">
                     <!-- 左：推薦清單與完整跟練按鈕 -->
                     <div class="space-y-4">
@@ -371,10 +379,69 @@
                     <!-- 右：週計畫 Timeline -->
                     <div>
                         <h3 class="font-bold mb-4 flex items-center gap-2 px-1 text-gray-800"><i data-lucide="calendar" class="text-green-500"></i> 個人化一週規劃</h3>
-                        <div class="bg-white border border-gray-100 rounded-2xl p-6 space-y-6" id="weeklyPlan"></div>
+                        <div class="bg-white border border-gray-100 rounded-2xl p-6 space-y-6" id="weekly-plan-grid"></div>
                     </div>
                 </div>
             </div>
+
+            <div id="section-report" class="hidden fade-in pb-10 space-y-6">
+                <div class="flex border-b border-gray-200 mb-6 bg-white rounded-t-2xl px-6">
+                    <button onclick="switchReportTab('current')" id="tab-current" class="px-6 py-4 border-b-2 border-blue-600 text-blue-600 font-bold text-sm">本次成果</button>
+                    <button onclick="switchReportTab('history')" id="tab-history" class="px-6 py-4 border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition text-sm">歷史訓練紀錄</button>
+                </div>
+            
+                <div id="report-current-content" class="space-y-6">
+                    <div class="bg-white border border-gray-100 p-8 rounded-3xl shadow-lg">
+                        <div class="flex items-center gap-3 mb-8">
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i data-lucide="award" class="w-6 h-6"></i></div>
+                            <h3 class="text-xl font-bold text-gray-800">今日復健表現總結</h3>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-10 items-center">
+                            <div class="relative h-64">
+                                <canvas id="qualityChartByCount"></canvas>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span class="text-xs text-gray-400">總動作數</span>
+                                    <span class="text-2xl font-black text-gray-700" id="stat-total-count">0</span>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-green-50 p-5 rounded-2xl border border-green-100 text-center shadow-sm">
+                                        <span class="text-[11px] text-green-700 font-bold block mb-1">標準達標次數</span>
+                                        <span class="text-3xl font-black text-green-600" id="report-standard-count">0 <small class="text-sm">次</small></span>
+                                    </div>
+                                    <div class="bg-red-50 p-5 rounded-2xl border border-red-100 text-center shadow-sm">
+                                        <span class="text-[11px] text-red-700 font-bold block mb-1">角度不足次數</span>
+                                        <span class="text-3xl font-black text-red-600" id="report-failed-count">0 <small class="text-sm">次</small></span>
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 relative overflow-hidden">
+                                    <div class="absolute -right-2 -bottom-2 opacity-10 text-blue-600"><i data-lucide="brain" class="w-16 h-16"></i></div>
+                                    <h4 class="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2"><i data-lucide="message-square-quote" class="w-4 h-4"></i> AI 臨床數據判讀：</h4>
+                                    <p class="text-sm text-blue-700 leading-relaxed italic" id="reportQualityInsight"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="resetToStep1()" class="w-full py-4 bg-white border-2 border-blue-100 text-blue-600 rounded-2xl text-sm font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        進行明日生理監控並更新計畫
+                    </button>
+                </div>
+            
+                <div id="report-history-content" class="hidden space-y-4">
+                    <div class="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+                        <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="trending-up" class="text-blue-500 w-5 h-5"></i> 近期訓練趨勢</h3>
+                        <div class="h-64 relative">
+                            <canvas id="historyTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3" id="historyLogList">
+                        </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -510,11 +577,11 @@
             document.getElementById('resultSummary').innerHTML = processedSummary;
             document.getElementById('qualityInsight').innerText = insightText;
 
-            // 3. 渲染 RPE 指引區塊 (數據由 api_server.py 回傳的 rpe_text 提供)
+            // 3. 渲染 RPE 指引區塊：支援 [RPE:11-13] / [RPE:11]，保留後方白話說明
             const rpeContent = document.getElementById('rpeContent');
             if (data.rpe_text) {
-                rpeContent.innerHTML = data.rpe_text.replace(/\[RPE:([\d-]+)\]/g, 
-                    '<span class="bg-blue-600 text-white px-2 py-0.5 rounded-md font-bold mx-1">RPE: $1</span>');
+                rpeContent.innerHTML = data.rpe_text.replace(/\[RPE:([\d-]+)\]/g,
+                    '<span class="bg-blue-600 text-white px-3 py-1 rounded-full font-bold shadow-sm mr-2">RPE: $1</span>');
             }
 
             // 4. 呼叫 UI 渲染函式
@@ -525,13 +592,16 @@
             lucide.createIcons();
         }
 
-        // 渲染推薦動作 (已移除 AI 評分)
+        // 渲染推薦動作：縮圖優先，無縮圖時顯示 play 圖示
         function renderVideoListUI(videos) {
-            document.getElementById('videoList').innerHTML = videos.map(v => `
+            document.getElementById('videoList').innerHTML = videos.map(v => {
+                const thumbPath = v.filename.replace('.mp4', '_yolo.jpg');
+                return `
                 <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition group">
                     <div class="flex items-center gap-4">
-                        <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0 border border-blue-100">
-                            <i data-lucide="play" class="text-blue-600 w-8 h-8"></i>
+                        <div class="video-thumb-box relative">
+                            <img src="${thumbPath}" alt="" class="absolute inset-0 w-full h-full object-cover rounded-2xl" onerror="this.style.display='none';const s=this.nextElementSibling;if(s)s.classList.remove('hidden')">
+                            <span class="hidden absolute inset-0 flex items-center justify-center text-blue-600 bg-blue-50"><i data-lucide="play" class="w-8 h-8"></i></span>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="font-bold text-gray-800 text-sm truncate">${v.title}</h4>
@@ -547,26 +617,34 @@
                         <i data-lucide="video" class="w-4 h-4"></i> 單曲跟練
                     </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+            lucide.createIcons();
         }
 
-        // 渲染一週時間軸 (與 renderWeeklyPlanUI 整合)
+        // 渲染一週時間軸：第一天＝今日日期，其餘依序推算
         function renderWeeklyPlanUI(plan) {
-            const dayNames = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"];
-            document.getElementById('weeklyPlan').innerHTML = plan.map((p, i) => {
-                const isRest = p.includes("休息") || p.includes("恢復");
+            const container = document.getElementById('weekly-plan-grid');
+            const now = new Date();
+            container.innerHTML = plan.map((p, i) => {
+                const futureDate = new Date(now);
+                futureDate.setDate(now.getDate() + i);
+                const dateStr = `${futureDate.getMonth() + 1}/${futureDate.getDate()}`;
+                const isToday = i === 0;
                 return `
-                <div class="flex gap-4 pb-6 last:pb-0 relative">
-                    ${i < 6 ? '<div class="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-100"></div>' : ''}
-                    <div class="w-8 h-8 rounded-full ${isRest ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'} flex items-center justify-center text-xs font-bold z-10 border-2 shrink-0">${i+1}</div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${dayNames[i]}</span>
-                        </div>
-                        <div class="bg-gray-50/50 p-3 rounded-xl border border-gray-100 text-sm font-medium text-gray-700">${p}</div>
+            <div class="flex gap-4 pb-6 relative">
+                <div class="w-10 flex flex-col items-center">
+                    <span class="text-[9px] font-black ${isToday ? 'text-blue-600' : 'text-gray-400'} mb-1">${dateStr}</span>
+                    <div class="w-8 h-8 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'} flex items-center justify-center text-xs font-bold z-10 border-2">
+                        ${i + 1}
                     </div>
-                </div>`;
+                </div>
+                <div class="flex-1 bg-white/50 p-3 rounded-2xl border ${isToday ? 'border-blue-200 shadow-sm' : 'border-gray-100'}">
+                    <p class="text-sm font-medium text-gray-700">${p}</p>
+                </div>
+            </div>`;
             }).join('');
+            lucide.createIcons();
         }
 
         // ==========================================
@@ -616,13 +694,178 @@
         function startStream(paths) {
             document.getElementById('section-streaming').classList.remove('hidden');
             const videoParam = encodeURIComponent(paths.join(','));
-            document.getElementById('ai-stream-view').src = `http://127.0.0.1:5000/video_feed?videos=${videoParam}`;
+            const nyhaMap = { "I": "class_i", "II": "class_ii", "III": "class_iii", "IV": "class_iii" };
+            const userLevel = nyhaMap[globalData.nyhaclass] || "class_ii";
+            document.getElementById('ai-stream-view').src =
+                `http://127.0.0.1:5000/video_feed?videos=${videoParam}&nyha=${userLevel}`;
+        }
+
+        // 用於儲存歷史數據的全域變數
+        let trainingHistory = JSON.parse(localStorage.getItem('hf_rehab_history') || '[]');
+
+        function initDashboard() {
+        const now = new Date();
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        
+        // 1. 日期顯示
+        const dateEl = document.getElementById('current-date-text');
+        if (dateEl) dateEl.innerText = now.toLocaleDateString('zh-TW', dateOptions);
+
+        // 2. 連續天數計算 (維持復健動力)
+        calculateStreak();
+    }
+
+        function calculateStreak() {
+            const el = document.getElementById('streak-text');
+            if (trainingHistory.length === 0) return;
+            let streak = 0;
+            let lastDate = new Date(trainingHistory[0].date);
+            let diff = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+            if (diff <= 1) {
+                streak = 1;
+                for (let i = 0; i < trainingHistory.length - 1; i++) {
+                    let d1 = new Date(trainingHistory[i].date);
+                    let d2 = new Date(trainingHistory[i + 1].date);
+                    if (Math.floor((d1 - d2) / (1000 * 60 * 60 * 24)) === 1) streak++;
+                    else break;
+                }
+            }
+            el.innerText = "連續復健 " + streak + " 天";
+        }
+
+        /** 從 header 進入：顯示成就報告頁並切到歷史紀錄籤 */
+        function openReportPage() {
+            document.getElementById('section-step-1').classList.add('hidden');
+            document.getElementById('section-step-2').classList.add('hidden');
+            document.getElementById('section-loading').classList.add('hidden');
+            document.getElementById('section-results').classList.remove('hidden');
+            document.getElementById('section-report').classList.remove('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            switchReportTab('history');
+            if (typeof renderHistoryList === 'function') renderHistoryList();
+            if (typeof initHistoryChart === 'function' && trainingHistory.length > 0) initHistoryChart();
+            lucide.createIcons();
+        }
+
+        /** 返回輸入頁面，保留歷史紀錄（不整頁重載） */
+        function resetToStep1() {
+            document.getElementById('section-report').classList.add('hidden');
+            document.getElementById('section-results').classList.add('hidden');
+            document.getElementById('section-step-1').classList.remove('hidden');
+            document.getElementById('section-step-2').classList.add('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            currentVideos = [];
+            if (trainingHistory.length > 0) {
+                console.log("歡迎回來，繼續累積您的復健進度！");
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function stopStreaming() {
             document.getElementById('section-streaming').classList.add('hidden');
             document.getElementById('ai-stream-view').src = "";
+            
+            // 1. 切換顯示頁面：隱藏今日建議，顯示成就報告頁面
+            document.getElementById('section-results').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            document.getElementById('section-report').classList.remove('hidden');
+
+            // 2. 數據結算 (實際展示時可由後端回傳，此處模擬跟練後的真實數據)
+            const valid = 24; 
+            const total = 30; 
+            const failed = total - valid;
+
+            // 填入 UI 次數
+            document.getElementById('report-standard-count').innerText = valid;
+            document.getElementById('report-failed-count').innerText = failed;
+            document.getElementById('stat-total-count').innerText = total;
+            document.getElementById('reportQualityInsight').innerText = document.getElementById('qualityInsight').innerText;
+
+            // 3. 儲存至本地歷史紀錄
+            const record = {
+                date: new Date().toLocaleDateString(),
+                valid: valid,
+                total: total,
+                goal: document.getElementById('resultGoalText').innerText
+            };
+            trainingHistory.unshift(record);
+            localStorage.setItem('hf_rehab_history', JSON.stringify(trainingHistory.slice(0, 10)));
+
+            // 4. 初始化圖表
+            initReportChart(valid, failed);
+            initHistoryChart();
+            renderHistoryList();
         }
+
+        function switchReportTab(tab) {
+            const isCurrent = tab === 'current';
+            document.getElementById('report-current-content').classList.toggle('hidden', !isCurrent);
+            document.getElementById('report-history-content').classList.toggle('hidden', isCurrent);
+            
+            // 更新樣式
+            document.getElementById('tab-current').className = isCurrent ? "px-6 py-4 border-b-2 border-blue-600 text-blue-600 font-bold text-sm" : "px-6 py-4 border-b-2 border-transparent text-gray-500 text-sm";
+            document.getElementById('tab-history').className = !isCurrent ? "px-6 py-4 border-b-2 border-blue-600 text-blue-600 font-bold text-sm" : "px-6 py-4 border-b-2 border-transparent text-gray-500 text-sm";
+        }
+
+        function initReportChart(v, f) {
+            const ctx = document.getElementById('qualityChartByCount').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['標準達標', '角度不足'],
+                    datasets: [{ data: [v, f], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0, cutout: '80%' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyLogList');
+            container.innerHTML = trainingHistory.map(h => `
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] text-gray-400 font-bold">${h.date}</span>
+                        <p class="font-bold text-gray-700">${h.goal}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-green-600 font-black text-lg">${h.valid}</span>
+                        <span class="text-gray-300 mx-1">/</span>
+                        <span class="text-gray-400 text-sm">${h.total} 次</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        function initHistoryChart() {
+        const canvas = document.getElementById('historyTrendChart');
+        if (!canvas || trainingHistory.length === 0) return;
+
+        const ctx = canvas.getContext('2d');
+        const labels = trainingHistory.slice(0, 7).reverse().map(h => h.date);
+        const data = trainingHistory.slice(0, 7).reverse().map(h => h.valid);
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '標準達標次數',
+                    data: data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+            }
+        });
+    }
+
+    initDashboard();
     </script>
 </body>
 </html>

@@ -405,27 +405,34 @@ def generate_7_day_plan(user_condition: dict, risk_assessment: dict, selected_ex
 
 
 def generate_rpe_instruction(user_condition: dict, selected_exercises: list) -> str:
-    """根據 NYHA 分級與 YOLO 物理負荷，動態生成 RPE 強度建議"""
+    """根據 NYHA 分級與 YOLO 物理負荷，動態生成具備「白話體感描述」的 RPE 強度建議"""
     
-    # 1. 取得 NYHA 分級 (例如: "I", "II", "III", "IV")
-    nyha = str(user_condition.get("nyha", "II"))
-    
-    # 2. 找出推薦動作中的最大衝擊力 (YOLO 辨識數據)
+    # 1. 取得 NYHA 分級 (例如: "I", "II", "III", "IV")，.strip() 避免前端傳 "III " 或 "3" 失效
+    nyha = str(user_condition.get("nyha", "II")).strip()
+
+    # 2. 找出推薦動作中的最大衝擊力 (由 YOLO 引擎預先算出的數據)
     max_bw = 0.0
     for ex in selected_exercises:
-        # 從 impact_bw_high 欄位直接獲取，避免解析 stats 陣列文字出錯
         bw_val = float(ex.get('impact_bw_high', 1.2)) 
         if bw_val > max_bw: max_bw = bw_val
 
-    # 3. 判定邏輯：NYHA III 級強制保護邏輯
-    if nyha == "III" or "III" in nyha:
-        rpe_range = "[RPE:11] (輕鬆至輕微喘)"
-        safety_note = "由於您的心臟功能分級為 Class III，建議採取最保守強度。"
+    # 3. 判定邏輯：結合分級、物理負荷與白話體感描述
+    # 針對不同的 RPE 區間提供白話對照
+    if "III" in nyha:
+        # NYHA III 級強制採取極保守強度
+        rpe_range = "[RPE:11]"
+        vernacular_desc = "感覺「輕鬆」，呼吸維持平穩，且運動中可以順利唱歌或長談。"
+        safety_note = "由於您的心臟功能分級為 Class III，建議採取最保守強度，避免心肺過度負荷。"
     elif max_bw > 1.4:
-        rpe_range = "[RPE:11]-12 (微喘但可輕鬆對話)"
-        safety_note = "考量今日動作負荷較大，強度不宜過高。"
+        # 動作負荷較高時，限制 RPE 上限為 12
+        rpe_range = "[RPE:11-12]"
+        vernacular_desc = "感覺「很輕微的費力」，呼吸稍微加快，可以維持輕鬆交談。"
+        safety_note = "考量今日部分動作對關節負荷較大，請以此輕度體感為標準，切勿憋氣。"
     else:
-        rpe_range = "[RPE:11]-13 (微喘但可持續對話)"
-        safety_note = "目前動作負荷適中，請維持在目標強度區間。"
+        # 一般穩定狀態，允許 RPE 到達 13
+        rpe_range = "[RPE:11-13]"
+        vernacular_desc = "感覺「微喘但舒服」，雖有費力感但仍可持續交談，不可喘到無法說話。"
+        safety_note = "目前動作負荷適中，請以此目標強度進行，若感到胸悶或頭暈請立即停止。"
 
-    return f"ACSM 強烈建議：根據您的 NYHA {nyha} 分級與今日動作負荷（約 {max_bw:.1f} 倍體重），運動時自覺費力感應控制在 {rpe_range}。{safety_note}"
+    return (f"ACSM 強烈建議：根據您的 NYHA {nyha} 分級與今日動作負荷（約 {max_bw:.1f} 倍體重），"
+            f"運動強度請控制在 {rpe_range}。白話來說，即是{vernacular_desc} {safety_note}")

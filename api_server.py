@@ -20,9 +20,13 @@ from modules.recommender_filter import (
     soft_rank_exercises,
 )
 try:
-    from modules.gpt_summary import generate_today_summary, generate_7_day_plan
+    from modules.gpt_summary import (
+        generate_today_summary,
+        generate_7_day_plan,
+        generate_rpe_instruction,
+    )
 except ImportError:
-    from gpt_summary import generate_today_summary, generate_7_day_plan
+    from gpt_summary import generate_today_summary, generate_7_day_plan, generate_rpe_instruction
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -132,12 +136,10 @@ def analyze_data():
         gpt_summary_text = generate_today_summary(user_condition, risk_assessment, selected_top_4)
         gpt_weekly_plan = generate_7_day_plan(user_condition, risk_assessment, selected_top_4)
         
-        # (2) 新增：生成 RPE 專業指引文字
-        # 這是為了對接前端的 id="rpeContent"
+        # (2) 生成 RPE 專業指引文字，對接前端 rpeContent
         try:
-            from gpt_summary import generate_rpe_instruction
             rpe_instruction = generate_rpe_instruction(user_condition, selected_top_4)
-        except ImportError:
+        except Exception:
             rpe_instruction = "根據 ACSM 指引，請維持在 [RPE:11-13] 的運動強度。"
 
         # (3) 整合回傳資料
@@ -156,13 +158,21 @@ def analyze_data():
 
 @app.route("/video_feed")
 def video_feed():
-    """跟練串流：接收影片清單並啟動雙畫面引擎。"""
+    """跟練串流：接收影片清單與 NYHA 分級，啟動雙畫面引擎。"""
     videos_param = request.args.get("videos", "")
     if not videos_param:
         return "沒有提供影片", 400
     playlist = videos_param.split(",")
+    nyha = request.args.get("nyha", "II").strip()
+    nyha_upper = nyha.upper()
+    if nyha_upper in ("I", "II", "III"):
+        nyha_level = {"I": "class_i", "II": "class_ii", "III": "class_iii"}[nyha_upper]
+    elif nyha.lower() in ("class_i", "class_ii", "class_iii"):
+        nyha_level = nyha.lower()
+    else:
+        nyha_level = "class_ii"
     return Response(
-        generate_frames(playlist),
+        generate_frames(playlist, nyha_level=nyha_level),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
 

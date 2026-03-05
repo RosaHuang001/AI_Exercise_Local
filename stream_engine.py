@@ -151,18 +151,21 @@ def draw_colored_pose(frame, keypoints_obj, color_bgr):
 # =========================
 # 核心串流產生器 (有效次數與骨架變色強化版)
 # =========================
-def generate_frames(playlist):
+def generate_frames(playlist, nyha_level="class_ii"):
+    """
+    nyha_level: "class_i" | "class_ii" | "class_iii"，可透過 API 的 URL 參數傳入。
+    依 rom_standards 決定骨架變色與有效次數的判定門檻。
+    """
     if not playlist: return
-    
-    # 1. 初始化資源與載入動作庫
+
     playlist = [p if os.path.isabs(p) else os.path.join(_SCRIPT_DIR, p) for p in playlist]
     lib_path = os.path.join(_SCRIPT_DIR, "knowledge_base", "exercise_library.json")
-    
     try:
         with open(lib_path, 'r', encoding='utf-8') as f:
-            exercise_lib = json.load(f)
-    except:
-        exercise_lib = []
+            lib_data = json.load(f)
+        exercise_list = lib_data.get("exercises", []) if isinstance(lib_data, dict) else lib_data
+    except Exception:
+        exercise_list = []
 
     model = YOLO(MODEL_PATH)
     cap_user = cv2.VideoCapture(0)
@@ -231,32 +234,30 @@ def generate_frames(playlist):
                 else:
                     frame_ref_display = frame_ref
                     
-                    # --- 自動抓取標竿角度與準確度判定 ---
+                    # --- 依 NYHA 分級抓取門檻角度與準確度判定 ---
                     curr_file = os.path.basename(playlist[current_vid_idx])
-                    target_ex = next((x for x in exercise_lib if x.get('video_filename') == curr_file), {})
-                    ref_standard_angle = float(target_ex.get('rom_p5_p95', 160.0)) 
+                    target_ex = next((x for x in exercise_list if x.get("video_filename") == curr_file), {})
+                    standards = target_ex.get("rom_standards", {})
+                    ref_standard_angle = float(standards.get(nyha_level, target_ex.get("rom_p5_p95", 160.0)))
 
                     if user_angle is not None:
-                        # 計算準確度
                         angle_diff = abs(user_angle - ref_standard_angle)
-                        raw_acc = max(0, 100 - (angle_diff / 45 * 100))
-                        accuracy_history.append(raw_acc)
-                        if len(accuracy_history) > 10: accuracy_history.pop(0)
-                        display_acc = int(np.mean(accuracy_history))
+                        # 誤差 ≤8 度或達到分級門檻即為達標（綠色）；否則依誤差算準確度（紅色）
+                        if angle_diff <= 8 or user_angle >= ref_standard_angle:
+                            display_acc = 100
+                            accuracy_color_bgr = (0, 255, 0)
+                        else:
+                            display_acc = int(max(0, 100 - (angle_diff / 45 * 100)))
+                            accuracy_color_bgr = (0, 0, 255)
 
-                        # 門檻判定：80% 以上變綠色，否則維持紅色
-                        if display_acc >= 80:
-                            accuracy_color_bgr = (0, 255, 0) # 綠色
-
-                        # --- 有效次數計數 ---
+                        # --- 有效次數：僅在「綠色骨架」當下偵測到新峰值才計入 ---
                         user_series.append(float(user_angle))
                         if len(user_series) > 50:
                             arr = np.array(user_series, dtype=np.float32)
                             peaks, _ = find_peaks(-arr, distance=PEAK_DISTANCE, prominence=PEAK_PROMINENCE)
                             new_peak_count = len(peaks)
-                            # 偵測到新動作且該瞬間準確度達標，才算一次有效達標
                             if new_peak_count > last_peak_count:
-                                if display_acc >= 80:
+                                if accuracy_color_bgr == (0, 255, 0):
                                     current_valid_reps += 1
                                 last_peak_count = new_peak_count
 
