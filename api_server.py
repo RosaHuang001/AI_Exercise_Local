@@ -8,11 +8,12 @@ import traceback
 import webbrowser
 from threading import Timer
 
+import cv2
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
 from rag.user_condition_mapper import build_user_context
-from stream_engine import generate_frames
+from stream_engine import generate_frames, get_last_session_stats
 from modules.recommender_filter import (
     UserState,
     load_exercise_library,
@@ -142,18 +143,50 @@ def analyze_data():
         except Exception:
             rpe_instruction = "根據 ACSM 指引，請維持在 [RPE:11-13] 的運動強度。"
 
-        # (3) 整合回傳資料
+        # (3) 整合回傳資料（欄位名稱與前端 renderResults 對齊）
         return jsonify({
             "status": "success",
             "videos": videos_for_html,
-            "plan": gpt_weekly_plan,
-            "gpt_summary": gpt_summary_text,
-            "rpe_text": rpe_instruction  # 必須回傳此欄位，前端紅框才會有字
+            "seven_day_plan": gpt_weekly_plan,
+            "today_summary": gpt_summary_text,
+            "rpe_text": rpe_instruction,
         })
         
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/thumbnail")
+def thumbnail():
+    """從影片擷取第一幀作為縮圖，供前端「今日推薦動作清單」使用。"""
+    path = request.args.get("path", "").strip()
+    if not path or ".." in path:
+        return "缺少 path 參數", 400
+    full_path = os.path.join(SCRIPT_DIR, path)
+    if not os.path.isfile(full_path):
+        return "檔案不存在", 404
+    try:
+        cap = cv2.VideoCapture(full_path)
+        ret, frame = cap.read()
+        cap.release()
+        if not ret or frame is None:
+            return "無法讀取影片", 404
+        _, buf = cv2.imencode(".jpg", frame)
+        return Response(buf.tobytes(), mimetype="image/jpeg")
+    except Exception as e:
+        traceback.print_exc()
+        return str(e), 500
+
+
+@app.route("/")
+def index():
+    """提供前端頁面，避免 file:// 開啟時 MJPEG 串流被混合內容阻擋。"""
+    ui_path = os.path.join(SCRIPT_DIR, "rehab_app.html")
+    if not os.path.isfile(ui_path):
+        return "rehab_app.html 不存在", 404
+    with open(ui_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 @app.route("/video_feed")
@@ -177,20 +210,21 @@ def video_feed():
     )
 
 
-if __name__ == "__main__":
-    ui_path = os.path.join(SCRIPT_DIR, "rehab_app.html")
-    file_url = "file:///" + os.path.abspath(ui_path).replace("\\", "/")
+@app.route("/session_stats")
+def session_stats():
+    """回傳最近一次 AI 跟練的次數統計（stream_engine 寫入 LAST_SESSION_STATS），供成就報告頁取代寫死的 0。"""
+    return jsonify(get_last_session_stats())
 
+
+if __name__ == "__main__":
     print("\n🚀 AI 心衰復健 API 伺服器啟動完成")
-    print("📍 API：http://127.0.0.1:5000")
-    print("📍 請手動開啟前端：" + file_url + "\n")
+    print("📍 前端與 API：http://127.0.0.1:5000/ （請用此網址開啟，串流才可正常顯示）\n")
 
     def open_browser():
-        if os.path.exists(ui_path):
-            try:
-                webbrowser.open(file_url)
-            except Exception:
-                pass
+        try:
+            webbrowser.open("http://127.0.0.1:5000/")
+        except Exception:
+            pass
 
     Timer(2.0, open_browser).start()
     app.run(host="127.0.0.1", port=5000, debug=False, threaded=True)

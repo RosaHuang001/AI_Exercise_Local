@@ -68,6 +68,26 @@
             height: 100%;
             object-fit: cover;
         }
+        /* 生理數值警示：超標時輸入框變色（預警機制） */
+        .vital-input-warn { border-color: #f97316 !important; background-color: #fff7ed !important; }
+        .vital-input-danger { border-color: #dc2626 !important; background-color: #fef2f2 !important; }
+        /* 一週規劃：今日區塊呼吸光暈，強化「今日任務」 */
+        @keyframes today-glow {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.7), 0 0 20px rgba(59, 130, 246, 0.3); }
+        }
+        .weekly-plan-today {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+            animation: today-glow 2.5s ease-in-out infinite;
+        }
+        /* 成就慶祝全螢幕 */
+        .celebration-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .celebration-overlay .medal { width: 120px; height: 120px; margin-bottom: 1rem; }
     </style>
 </head>
 <body class="text-gray-700 flex items-center justify-center p-4">
@@ -332,8 +352,23 @@
                         <button onclick="stopStreaming()" class="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg font-bold text-sm">結束跟練</button>
                     </div>
                     <div class="flex-1 bg-black flex items-center justify-center relative w-full overflow-hidden">
-                        <img id="ai-stream-view" class="w-full h-full object-contain relative z-20" />
+                        <div id="stream-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 z-10 pointer-events-none">
+                            <div class="animate-spin w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full mb-4"></div>
+                            <p class="text-sm">串流連線中…</p>
+                        </div>
+                        <img id="ai-stream-view" class="w-full h-full object-contain relative z-20" alt="AI 跟練畫面" />
                     </div>
+                </div>
+            </div>
+
+            <!-- 成就慶祝全螢幕（完成跟練後短暫顯示） -->
+            <div id="celebration-overlay" class="celebration-overlay hidden">
+                <div class="bg-white rounded-3xl p-10 text-center shadow-2xl max-w-md mx-4">
+                    <div class="medal mx-auto rounded-full bg-amber-100 border-4 border-amber-400 flex items-center justify-center">
+                        <i data-lucide="award" class="w-16 h-16 text-amber-500"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-gray-800 mb-2">恭喜完成今日目標！</h2>
+                    <p class="text-gray-600 text-sm">繼續保持，復健之路有您真好。</p>
                 </div>
             </div>
 
@@ -360,8 +395,8 @@
                         <i data-lucide="gauge" class="w-5 h-5"></i>
                         <span>Borg RPE 運動強度指引 (基於 ACSM 指引)</span>
                     </div>
-                    <p class="text-sm text-gray-600 leading-relaxed" id="rpeContent">
-                        </p>
+                    <p class="text-sm text-gray-600 leading-relaxed" id="rpeContent"></p>
+                    <p class="text-xs text-blue-700 mt-2 pt-2 border-t border-blue-100"><strong>談話測試：</strong>感覺輕鬆，運動中可順利交談／唱歌即為適當強度。</p>
                 </div>
             
                 <div class="grid md:grid-cols-2 gap-8">
@@ -382,6 +417,11 @@
                         <div class="bg-white border border-gray-100 rounded-2xl p-6 space-y-6" id="weekly-plan-grid"></div>
                     </div>
                 </div>
+                <!-- 進行明日生理監控並更新計畫：放在結果頁，不放在成就報告頁 -->
+                <button onclick="resetToStep1()" class="w-full mt-6 py-4 bg-white border-2 border-blue-100 text-blue-600 rounded-2xl text-sm font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    進行明日生理監控並更新計畫
+                </button>
             </div>
 
             <div id="section-report" class="hidden fade-in pb-10 space-y-6">
@@ -424,9 +464,9 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="resetToStep1()" class="w-full py-4 bg-white border-2 border-blue-100 text-blue-600 rounded-2xl text-sm font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        進行明日生理監控並更新計畫
+                    <button onclick="goBackToResults()" class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        繼續跟練其他動作
                     </button>
                 </div>
             
@@ -459,6 +499,7 @@
                 improveGoal: document.getElementById('improveGoal').value,
                 age: document.getElementById('userAge').value,
                 gender: document.getElementById('userGender').value,
+                baseWeight: document.getElementById('baseWeight').value,
                 chronic: Array.from(document.querySelectorAll('input[name="chronic"]:checked')).map(el => el.value),
                 surgery: Array.from(document.querySelectorAll('input[name="surgery"]:checked')).map(el => el.value),
                 symptoms: Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(el => el.value)
@@ -466,6 +507,33 @@
             document.getElementById('section-step-1').classList.add('hidden');
             document.getElementById('section-step-2').classList.remove('hidden');
             document.getElementById('step-indicator-2').classList.replace('text-gray-400', 'text-blue-600');
+            initVitalFeedback();
+        }
+
+        /** 生理數值連動警示：收縮壓/舒張壓/心跳超標時輸入框變橘或紅 */
+        function updateVitalStyle(id, value, warnHigh, dangerHigh) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('vital-input-warn', 'vital-input-danger');
+            const n = parseFloat(value);
+            if (value === '' || isNaN(n)) return;
+            if (n >= dangerHigh) el.classList.add('vital-input-danger');
+            else if (n >= warnHigh) el.classList.add('vital-input-warn');
+        }
+        function initVitalFeedback() {
+            ['sysBP', 'diaBP', 'heartRate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const fn = () => {
+                    const v = el.value;
+                    if (id === 'sysBP') { updateVitalStyle(id, v, 140, 180); }
+                    else if (id === 'diaBP') { updateVitalStyle(id, v, 90, 110); }
+                    else if (id === 'heartRate') { updateVitalStyle(id, v, 100, 120); }
+                };
+                el.addEventListener('input', fn);
+                el.addEventListener('blur', fn);
+                fn();
+            });
         }
 
         function goBackToStep1() {
@@ -476,7 +544,14 @@
 
         async function startAnalysis(e) {
             e.preventDefault();
-            
+
+            const todayW = parseFloat(document.getElementById('todayWeight').value) || 0;
+            const baseW = parseFloat(globalData.baseWeight) || 0;
+            if (baseW > 0 && (todayW - baseW) > 2) {
+                alert("今日體重增加異常（較基礎體重增加超過 2 公斤），可能出現水腫，不建議運動，請聯繫醫護人員。");
+                return;
+            }
+
             // 1. 顯示載入畫面，隱藏輸入表單
             document.getElementById('section-step-2').classList.add('hidden');
             document.getElementById('section-loading').classList.remove('hidden');
@@ -551,57 +626,74 @@
         // 核心結果渲染函式 (唯一入口)
         // ==========================================
         function renderResults(data) {
+            if (!data || data.status !== 'success') return;
             document.getElementById('section-loading').classList.add('hidden');
             document.getElementById('section-results').classList.remove('hidden');
-            currentVideos = data.videos;
 
-            // 1. 更新目標徽章
+            // 統一讀取：後端可能回傳 seven_day_plan/today_summary 或舊的 plan/gpt_summary
+            const videos = data.videos || [];
+            const plan = data.seven_day_plan || data.plan || [];
+            const summaryText = data.today_summary || data.gpt_summary || "";
+            const rpeText = data.rpe_text || "";
+
+            currentVideos = videos;
+
+            // 1. 目標徽章
             const goalMap = { 'strength': '增強肌力', 'cardio': '心肺耐力', 'mobility': '活動度', 'pain': '減緩疼痛' };
-            document.getElementById('resultGoalText').innerText = goalMap[globalData.improveGoal] || "個人復健";
+            const goalEl = document.getElementById('resultGoalText');
+            if (goalEl) goalEl.innerText = goalMap[globalData.improveGoal] || "個人復健";
 
-            // 2. 處理「品質預測」拆分與 RPE 文字框
-            let fullText = data.gpt_summary || "";
-            let mainSummary = fullText;
+            // 2. 摘要與品質預測
+            let mainSummary = summaryText;
             let insightText = "系統預估您今日的穩定度良好。若發現骨架轉為紅色次數增加，代表心肺出現疲勞。";
-
-            if (fullText.includes("【品質預測】：")) {
-                const parts = fullText.split("【品質預測】：");
+            if (summaryText.includes("【品質預測】：")) {
+                const parts = summaryText.split("【品質預測】：");
                 mainSummary = parts[0].trim();
                 insightText = parts[1].trim();
             }
+            try {
+                const processedSummary = mainSummary.replace(/\[RPE:(\d+)\]/g, (match, rpeValue) =>
+                    `<span class="inline-flex items-center gap-1 mx-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-full font-bold text-sm shadow-inner">RPE:${rpeValue}</span>`);
+                const summaryEl = document.getElementById('resultSummary');
+                if (summaryEl) summaryEl.innerHTML = processedSummary;
+            } catch (e) { console.error("摘要渲染失敗", e); }
+            const insightEl = document.getElementById('qualityInsight');
+            if (insightEl) insightEl.innerText = insightText;
 
-            // 將 [RPE:x] 渲染為藍色膠囊標籤
-            const processedSummary = mainSummary.replace(/\[RPE:(\d+)\]/g, (match, rpeValue) => {
-                return `<span class="inline-flex items-center gap-1 mx-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-full font-bold text-sm shadow-inner">RPE:${rpeValue}</span>`;
-            });
-            document.getElementById('resultSummary').innerHTML = processedSummary;
-            document.getElementById('qualityInsight').innerText = insightText;
-
-            // 3. 渲染 RPE 指引區塊：支援 [RPE:11-13] / [RPE:11]，保留後方白話說明
+            // 3. RPE 指引（無內容時顯示預設）
             const rpeContent = document.getElementById('rpeContent');
-            if (data.rpe_text) {
-                rpeContent.innerHTML = data.rpe_text.replace(/\[RPE:([\d-]+)\]/g,
-                    '<span class="bg-blue-600 text-white px-3 py-1 rounded-full font-bold shadow-sm mr-2">RPE: $1</span>');
+            if (rpeContent) {
+                const rawRpe = rpeText || "根據 ACSM 指引，請維持在 [RPE:11-13] 的運動強度，微喘但可交談。";
+                try {
+                    rpeContent.innerHTML = rawRpe.replace(/\[RPE:([\d-]+)\]/g,
+                        '<span class="bg-blue-600 text-white px-2 py-0.5 rounded-md font-bold mx-1">RPE: $1</span>');
+                } catch (err) {
+                    console.error("RPE 渲染失敗:", err);
+                    rpeContent.innerText = rawRpe;
+                }
             }
 
-            // 4. 呼叫 UI 渲染函式
-            renderVideoListUI(data.videos);
-            renderWeeklyPlanUI(data.plan);
-            initQualityChart(data, globalData.nyhaclass);
-            
-            lucide.createIcons();
+            // 4. 推薦清單與週計畫（確保有呼叫）
+            try { renderVideoListUI(videos); } catch (e) { console.error("影片清單渲染失敗", e); }
+            try { renderWeeklyPlanUI(plan); } catch (e) { console.error("週計畫渲染失敗", e); }
+            try { initQualityChart(data, globalData.nyhaclass); } catch (e) { console.error("圖表初始化失敗", e); }
+
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
         }
 
-        // 渲染推薦動作：縮圖優先，無縮圖時顯示 play 圖示
+        // 渲染推薦動作：縮圖由後端 /thumbnail 從影片第一幀擷取
+        const THUMB_API = "http://127.0.0.1:5000/thumbnail";
         function renderVideoListUI(videos) {
-            document.getElementById('videoList').innerHTML = videos.map(v => {
-                const thumbPath = v.filename.replace('.mp4', '_yolo.jpg');
+            const container = document.getElementById('videoList');
+            if (!container) return;
+            container.innerHTML = (videos || []).map(v => {
+                const thumbUrl = THUMB_API + "?path=" + encodeURIComponent(v.filename);
+                const fallbackIcon = "https://img.icons8.com/ios/50/000000/video-playlist.png";
                 return `
                 <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition group">
                     <div class="flex items-center gap-4">
-                        <div class="video-thumb-box relative">
-                            <img src="${thumbPath}" alt="" class="absolute inset-0 w-full h-full object-cover rounded-2xl" onerror="this.style.display='none';const s=this.nextElementSibling;if(s)s.classList.remove('hidden')">
-                            <span class="hidden absolute inset-0 flex items-center justify-center text-blue-600 bg-blue-50"><i data-lucide="play" class="w-8 h-8"></i></span>
+                        <div class="video-thumb-box" title="縮圖：${v.title}">
+                            <img src="${thumbUrl}" alt="${v.title} 動作示範縮圖" class="w-full h-full object-cover rounded-2xl" onerror="this.onerror=null; this.src='${fallbackIcon}'; this.alt='${v.title}（縮圖載入失敗）'">
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="font-bold text-gray-800 text-sm truncate">${v.title}</h4>
@@ -625,8 +717,10 @@
         // 渲染一週時間軸：第一天＝今日日期，其餘依序推算
         function renderWeeklyPlanUI(plan) {
             const container = document.getElementById('weekly-plan-grid');
+            if (!container) return;
+            const list = Array.isArray(plan) ? plan : [];
             const now = new Date();
-            container.innerHTML = plan.map((p, i) => {
+            container.innerHTML = list.map((p, i) => {
                 const futureDate = new Date(now);
                 futureDate.setDate(now.getDate() + i);
                 const dateStr = `${futureDate.getMonth() + 1}/${futureDate.getDate()}`;
@@ -639,8 +733,8 @@
                         ${i + 1}
                     </div>
                 </div>
-                <div class="flex-1 bg-white/50 p-3 rounded-2xl border ${isToday ? 'border-blue-200 shadow-sm' : 'border-gray-100'}">
-                    <p class="text-sm font-medium text-gray-700">${p}</p>
+                <div class="flex-1 p-3 rounded-2xl border ${isToday ? 'border-blue-300 weekly-plan-today' : 'bg-gray-50/80 border-gray-100'}">
+                    <p class="text-sm font-medium ${isToday ? 'text-gray-800 font-bold' : 'text-gray-600'}">${p}</p>
                 </div>
             </div>`;
             }).join('');
@@ -692,12 +786,23 @@
         }
 
         function startStream(paths) {
-            document.getElementById('section-streaming').classList.remove('hidden');
+            const section = document.getElementById('section-streaming');
+            const imgEl = document.getElementById('ai-stream-view');
+            const placeholder = document.getElementById('stream-placeholder');
+            section.classList.remove('hidden');
+            placeholder.classList.remove('hidden');
+            placeholder.innerHTML = '<div class="animate-spin w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full mb-4"></div><p class="text-sm">串流連線中…</p>';
+            imgEl.onload = function () { placeholder.classList.add('hidden'); };
+            imgEl.onerror = function () {
+                placeholder.classList.remove('hidden');
+                placeholder.innerHTML = '<p class="text-amber-400 text-sm text-center max-w-md">無法連線至跟練伺服器</p><p class="text-gray-500 text-xs mt-2">請確認已啟動 api_server，並由此網址開啟：<br>http://127.0.0.1:5000/</p>';
+            };
+            // MJPEG 串流不一定觸發 load，2 秒後若仍是「連線中」則隱藏，避免擋住已出現的畫面
+            setTimeout(function () { if (placeholder.textContent.indexOf('串流連線中') !== -1) placeholder.classList.add('hidden'); }, 2000);
             const videoParam = encodeURIComponent(paths.join(','));
             const nyhaMap = { "I": "class_i", "II": "class_ii", "III": "class_iii", "IV": "class_iii" };
             const userLevel = nyhaMap[globalData.nyhaclass] || "class_ii";
-            document.getElementById('ai-stream-view').src =
-                `http://127.0.0.1:5000/video_feed?videos=${videoParam}&nyha=${userLevel}`;
+            imgEl.src = `http://127.0.0.1:5000/video_feed?videos=${videoParam}&nyha=${userLevel}`;
         }
 
         // 用於儲存歷史數據的全域變數
@@ -764,24 +869,55 @@
         function stopStreaming() {
             document.getElementById('section-streaming').classList.add('hidden');
             document.getElementById('ai-stream-view').src = "";
-            
-            // 1. 切換顯示頁面：隱藏今日建議，顯示成就報告頁面
-            document.getElementById('section-results').classList.add('hidden');
-            document.getElementById('progress-container').classList.add('hidden');
-            document.getElementById('section-report').classList.remove('hidden');
 
-            // 2. 數據結算 (實際展示時可由後端回傳，此處模擬跟練後的真實數據)
-            const valid = 24; 
-            const total = 30; 
-            const failed = total - valid;
+            // 先顯示成就慶祝，再進入報告（正向增強）
+            const overlay = document.getElementById('celebration-overlay');
+            overlay.classList.remove('hidden');
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                document.getElementById('section-results').classList.add('hidden');
+                document.getElementById('progress-container').classList.add('hidden');
+                document.getElementById('section-report').classList.remove('hidden');
+                showReportContent();
+            }, 2200);
+        }
 
-            // 填入 UI 次數
+        async function showReportContent() {
+            let valid = 0, total = 0, failed = 0, ended = false;
+            try {
+                const res = await fetch('http://127.0.0.1:5000/session_stats');
+                if (res.ok) {
+                    const stats = await res.json();
+                    valid = stats.valid_reps ?? stats.valid ?? 0;
+                    total = stats.total_reps ?? stats.total ?? 0;
+                    failed = stats.failed_reps ?? Math.max(0, total - valid);
+                    ended = !!stats.ended;
+                }
+            } catch (e) {
+                console.error("讀取 session_stats 失敗", e);
+            }
+
+            if (!ended || total <= 0) {
+                // 未完成跟練或沒有有效偵測時，不造假數據
+                document.getElementById('report-standard-count').innerText = 0;
+                document.getElementById('report-failed-count').innerText = 0;
+                document.getElementById('stat-total-count').innerText = 0;
+                document.getElementById('reportQualityInsight').innerText =
+                    "本次未記錄有效動作次數。請確認已開啟攝影機且有完成至少一組跟練，再結束課表。";
+                initReportChart(0, 0);
+                if (typeof initHistoryChart === 'function') initHistoryChart();
+                if (typeof renderHistoryList === 'function') renderHistoryList();
+                if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+                return;
+            }
+
             document.getElementById('report-standard-count').innerText = valid;
             document.getElementById('report-failed-count').innerText = failed;
             document.getElementById('stat-total-count').innerText = total;
-            document.getElementById('reportQualityInsight').innerText = document.getElementById('qualityInsight').innerText;
+            document.getElementById('reportQualityInsight').innerText =
+                "恭喜完成本次跟練！綠色標示為達到醫師建議 ROM 的次數，紅色則為角度尚可再進步的次數。";
 
-            // 3. 儲存至本地歷史紀錄
             const record = {
                 date: new Date().toLocaleDateString(),
                 valid: valid,
@@ -791,10 +927,19 @@
             trainingHistory.unshift(record);
             localStorage.setItem('hf_rehab_history', JSON.stringify(trainingHistory.slice(0, 10)));
 
-            // 4. 初始化圖表
             initReportChart(valid, failed);
-            initHistoryChart();
-            renderHistoryList();
+            if (typeof initHistoryChart === 'function') initHistoryChart();
+            if (typeof renderHistoryList === 'function') renderHistoryList();
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+
+        /** 從成就報告頁回到「今日推薦＋週計畫」結果頁，可繼續跟練其他動作 */
+        function goBackToResults() {
+            document.getElementById('section-report').classList.add('hidden');
+            document.getElementById('section-results').classList.remove('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
         }
 
         function switchReportTab(tab) {
