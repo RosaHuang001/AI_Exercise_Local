@@ -65,3 +65,11 @@ exercise_videos/
 *.mov
 *.mkv
 *.wmv
+
+# RAG 資料（避免把大型資料/向量庫推上 repo）
+rag_module/vector_db/
+rag_module/data/*.pdf
+rag_module/data/*.docx
+
+# 分析輸出
+yolo_analysis_report.csv

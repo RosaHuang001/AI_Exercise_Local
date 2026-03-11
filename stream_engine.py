@@ -3,8 +3,10 @@ import time
 import json
 import threading
 from queue import Queue, Empty
+
 import cv2
 import numpy as np
+import torch
 from ultralytics import YOLO
 from scipy.signal import find_peaks
 from PIL import Image, ImageDraw, ImageFont
@@ -251,7 +253,12 @@ def generate_frames(playlist, nyha_level="class_ii"):
     except Exception:
         exercise_list = []
 
+    # 初始化 YOLO 模型：強制使用 GPU（cuda），若沒有 CUDA 直接丟錯
+    if not torch.cuda.is_available():
+        raise RuntimeError("[stream_engine] 需要 CUDA/GPU，但目前 torch.cuda.is_available() 為 False")
     model = YOLO(MODEL_PATH)
+    model.to("cuda")
+    print("[stream_engine] YOLO device (forced):", model.device)
     # 背景 YOLO 用：queue + 結果暫存
     yolo_queue = Queue(maxsize=1) if USE_YOLO_THREAD else None
     yolo_result = {} if USE_YOLO_THREAD else None
