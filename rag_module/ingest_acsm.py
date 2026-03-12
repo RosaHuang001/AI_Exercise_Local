@@ -34,6 +34,7 @@ def build_acsm_vector_db():
     # 4. 優化 Metadata 分類
     for doc in docs:
         content = doc.page_content
+        #標註 Safety 與 FITT 等分類，讓RAG在搜尋時可以根據情況「挑重點看」
         if any(key in content for key in ["FITT", "頻率", "強度", "1-RM", "HRR", "RPE"]):
             doc.metadata["category"] = "FITT"
         elif any(key in content for key in ["特殊考量", "LVAD", "安全", "禁忌", "MAP", "疲勞"]):
@@ -43,7 +44,8 @@ def build_acsm_vector_db():
 
     # 5. 執行向量化並儲存
     try:
-        model_name = "intfloat/multilingual-e5-small"
+        #針對多語言優化的 E5 模型，它能理解「心衰竭」與「Cardiac Failure」在數學空間中是同一個意思
+        model_name = "intfloat/multilingual-e5-small" 
         model_kwargs = {"device": "cuda"}
         encode_kwargs = {"normalize_embeddings": True}
         embeddings = HuggingFaceEmbeddings(
