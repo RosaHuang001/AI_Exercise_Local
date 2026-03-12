@@ -138,8 +138,8 @@ def analyze_data():
     try:
         # Layer 1：嚴格安全門檻（中止/不宜運動條件）
         sys_bp = int(ui_data.get("sysBP") or 0)
-        dia_bp = int(ui_data.get("diaBP") or 0)
-        heart_rate = int(ui_data.get("heartRate") or 0)
+        dia_bp = int(ui_data.get("diaBP") or 80)
+        heart_rate = int(ui_data.get("heartRate") or 75)
         symptom = ui_data.get("currentSymptom") or "none"
         if symptom in ("chest_pain", "dizzy"):
             return jsonify({
@@ -247,15 +247,14 @@ def analyze_data():
             for ex in selected_top_4 if ex.get("video_filename")
         ]
 
-        # (4) 回傳整合資料
+        # (4) 回傳整合資料（前端所需欄位）
         return jsonify({
             "status": "success",
-            "videos": videos_for_html,
-            "seven_day_plan": plan_text,
+            "videos": videos_for_html,  # 確保正確回傳 videos
+            "seven_day_plan": gpt_weekly_result.get("plan_text", []),
             "today_summary": gpt_summary_text,
             "rpe_text": rpe_instruction,
-            "today_tasks": today_tasks,
-            "daily_tasks": daily_tasks,
+            "daily_tasks": gpt_weekly_result.get("daily_tasks") or daily_tasks or [],
         })
         
     except Exception as e:

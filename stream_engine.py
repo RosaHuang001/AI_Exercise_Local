@@ -83,7 +83,8 @@ def _yolo_worker(model, in_queue, result_holder, lock, stop_event):
             break
         small = cv2.resize(frame, (YOLO_INPUT_W, YOLO_INPUT_H))
         try:
-            res = model(small, verbose=False, imgsz=YOLO_IMGSZ)
+            # device=0 強制使用第一張 GPU（避免 ultralytics 自行退回 CPU）
+            res = model(small, verbose=False, imgsz=YOLO_IMGSZ, device=0)
             angle = extract_right_knee_angle_from_results(res[0])
             with lock:
                 result_holder["result0"] = res[0]
@@ -253,9 +254,7 @@ def generate_frames(playlist, nyha_level="class_ii"):
     except Exception:
         exercise_list = []
 
-    # 初始化 YOLO 模型：強制使用 GPU（cuda），若沒有 CUDA 直接丟錯
-    if not torch.cuda.is_available():
-        raise RuntimeError("[stream_engine] 需要 CUDA/GPU，但目前 torch.cuda.is_available() 為 False")
+    # 初始化 YOLO 模型：強制使用 GPU（cuda）。若環境未安裝 CUDA，會直接在此處爆掉（不允許偷跑 CPU）。
     model = YOLO(MODEL_PATH)
     model.to("cuda")
     print("[stream_engine] YOLO device (forced):", model.device)

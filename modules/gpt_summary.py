@@ -17,14 +17,24 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 OPENAI_MODEL = "gpt-4o"
 
 
-# ==================== RAG 設定 ====================
+# ==================== RAG 設定（延遲初始化，避免啟動卡住） ====================
 
-RAG_ENGINE = ACSMRagEngine()  # 內部已預設路徑，不必傳入參數
+RAG_ENGINE = None
+RULE_CONTROLLER = None
 
-RULE_CONTROLLER = RuleController(
-    max_rules=4,
-    debug=False
-)
+
+def get_rag_engine() -> ACSMRagEngine:
+    global RAG_ENGINE
+    if RAG_ENGINE is None:
+        RAG_ENGINE = ACSMRagEngine()  # 內部已預設路徑，不必傳入參數
+    return RAG_ENGINE
+
+
+def get_rule_controller() -> RuleController:
+    global RULE_CONTROLLER
+    if RULE_CONTROLLER is None:
+        RULE_CONTROLLER = RuleController(max_rules=4, debug=False)
+    return RULE_CONTROLLER
 
 
 def normalize(v, fallback_level="中"):
@@ -126,7 +136,7 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
         f"心臟衰竭 NYHA {user_condition.get('nyha')} 級病患，"
         f"進行{posture_zh}下之{region_zh}運動建議與安全規範"
     )
-    hf_rules_raw = RAG_ENGINE.retrieve_rules(query_text=query_text, k=4)
+    hf_rules_raw = get_rag_engine().retrieve_rules(query_text=query_text, k=4)
 
     user_profile = {
         "risk_level": risk_assessment.get("risk_level", "moderate"),
@@ -135,7 +145,7 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
         "posture": stats.get("posture"),
         "weight_bearing": stats.get("weight_bearing")
     }
-    hf_rules = RULE_CONTROLLER.process(rules=hf_rules_raw, user_profile=user_profile)
+    hf_rules = get_rule_controller().process(rules=hf_rules_raw, user_profile=user_profile)
 
     seen_content = set()
     unique_rules = []
@@ -172,6 +182,7 @@ def call_openai_label(file_name: str, duration_s: float, stats: dict, activity_l
     if rag_text:
         system_prompt += f"\n【ACSM 指引補充】：\n{rag_text}"
 
+    region_hint = region_zh
     user_prompt = f"""
 【系統自動判定活動強度】：
 - 本次動作強度等級：{activity_level}強度

@@ -240,8 +240,8 @@ def process_video_and_save_skeleton(model, filename):
         ret, frame = cap.read()
         if not ret: break # 讀取失敗或影片播完即結束
         
-        # 執行姿態估計：boxes=False 表示不畫人物方框，只保留專業骨架線條
-        res = model.predict(source=frame, verbose=False, conf=0.3, imgsz=640)[0]
+        # 執行姿態估計：device=0 強制使用第一張 GPU；boxes=False 表示不畫人物方框
+        res = model.predict(source=frame, verbose=False, conf=0.3, imgsz=640, device=0)[0]
         plot_frame = res.plot(boxes=False, labels=False)
 
         # 初始化影片寫入器
@@ -275,8 +275,16 @@ def main():
     print("🚀 三總復健系統：YOLO 運動分析與自動建檔管線 啟動中...")
     print("="*55 + "\n")
     
-    # 載入 YOLO 模型
+    # 強制使用 GPU：若環境未安裝 CUDA，將直接在後續初始化/推論時爆掉（不允許偷跑 CPU）
+    print(f"[yolo_pose_rep_counter] CUDA device(0): {torch.cuda.get_device_name(0)}")
+
+    # 載入 YOLO 模型並移到 GPU
     model = YOLO(MODEL_PATH)
+    try:
+        model.to("cuda")
+    except Exception:
+        # ultralytics 版本差異時仍可透過 predict(device=0) 強制 GPU
+        pass
     
     # 掃描原始影片資料夾
     video_files = [f for f in os.listdir(VIDEO_IN_DIR) if f.lower().endswith(".mp4")]

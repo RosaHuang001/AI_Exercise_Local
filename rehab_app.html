@@ -475,53 +475,34 @@
                 </button>
             </div>
 
-            <!-- ================= 安全性警示介面 (替代彈出視窗) ================= -->
+            <!-- ================= 安全性警示介面 (Cursor 新增) ================= -->
             <div id="section-warning" class="hidden fade-in py-10 px-6">
                 <div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-red-100">
-                    <!-- 頂部警示標頭 -->
                     <div class="bg-red-500 p-8 text-center text-white">
-                        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                            <i data-lucide="alert-octagon" class="w-12 h-12"></i>
+                        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                            <i data-lucide="alert-octagon" class="w-10 h-10"></i>
                         </div>
-                        <h2 class="text-2xl font-black tracking-tight">目前不建議進行運動</h2>
+                        <h2 class="text-2xl font-black">目前不建議進行運動</h2>
                     </div>
-                    
-                    <!-- 警示內容 -->
                     <div class="p-8 space-y-6">
-                        <div class="space-y-2 text-center">
-                            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">異常指標偵測</p>
-                            <p id="warning-reason" class="text-red-600 font-bold text-lg leading-snug">
-                                系統偵測到您的生理數據超出安全範圍。
-                            </p>
-                        </div>
-            
-                        <!-- ACSM 臨床建議區 -->
+                        <p id="warning-reason" class="text-red-600 font-bold text-center leading-relaxed">
+                            偵測到您的生理數據超出安全範圍。
+                        </p>
                         <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                             <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                                <i data-lucide="stethoscope" class="w-4 h-4 text-blue-500"></i> 三總臨床照護建議：
+                                <i data-lucide="stethoscope" class="w-4 h-4 text-blue-500"></i> 三總臨床建議：
                             </h4>
-                            <ul class="text-sm text-slate-600 space-y-3 leading-relaxed">
-                                <li class="flex gap-2">
-                                    <span class="text-red-500 font-bold">•</span> 
-                                    <span>請保持坐姿或臥姿休息，觀察呼吸與心跳。</span>
-                                </li>
-                                <li class="flex gap-2">
-                                    <span class="text-red-500 font-bold">•</span> 
-                                    <span>測量並記錄目前血壓與體重，注意是否有下肢凹陷性水腫。</span>
-                                </li>
-                                <li class="flex gap-2 text-red-700 font-bold">
-                                    <span class="text-red-500 font-bold">•</span> 
-                                    <span>若感到劇烈胸悶、冷汗或暈厥，請立即聯絡個案管理師或就醫。</span>
-                                </li>
+                            <ul class="text-xs text-slate-600 space-y-2">
+                                <li>• 請先保持靜坐休息 10 分鐘，平穩呼吸。</li>
+                                <li>• 觀察是否有下肢異常腫脹或胸悶。</li>
+                                <li class="text-red-700 font-bold">• 若症狀持續未緩解，請立即聯繫個管師。</li>
                             </ul>
                         </div>
-            
-                        <!-- 行動按鈕 -->
-                        <div class="space-y-3 pt-2">
-                            <button type="button" onclick="window.location.reload()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition shadow-lg flex justify-center items-center gap-2">
-                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新輸入數據
+                        <div class="space-y-3">
+                            <button type="button" onclick="window.location.reload()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition">
+                                重新輸入生理數據
                             </button>
-                            <a href="tel:021234567" class="w-full bg-white border-2 border-red-500 text-red-500 py-4 rounded-2xl font-bold hover:bg-red-50 transition flex justify-center items-center gap-2">
+                            <a href="tel:021234567" class="w-full bg-white border-2 border-red-500 text-red-500 py-4 rounded-xl font-bold flex justify-center items-center gap-2">
                                 <i data-lucide="phone" class="w-4 h-4"></i> 聯繫復健中心
                             </a>
                         </div>
@@ -655,97 +636,51 @@
 
         async function startAnalysis(e) {
             e.preventDefault();
+            const todayW = parseFloat(document.getElementById('todayWeight').value);
+            const baseW = parseFloat(globalData.baseWeight);
 
-            const todayW = parseFloat(document.getElementById('todayWeight').value) || 0;
-            const baseW = parseFloat(globalData.baseWeight) || 0;
-            // 1. 本地硬過濾：體重增加異常
+            // 1. 本地檢查：體重增加異常
             if (baseW > 0 && (todayW - baseW) > 2) {
-                showWarningUI("今日體重較基礎體重增加超過 2 公斤，可能出現明顯水腫。根據 ACSM 指引，此狀態下運動風險極高。");
+                showWarningUI("今日體重較基礎值增加超過 2 公斤，可能有嚴重水腫風險，不宜運動。");
                 return;
             }
 
-            // 1. 顯示載入畫面，隱藏輸入表單
             document.getElementById('section-step-2').classList.add('hidden');
             document.getElementById('section-loading').classList.remove('hidden');
 
-            const loadingText = document.getElementById('loading-text');
-            const progressBar = document.getElementById('progress-bar');
-            
-            // 2. 啟動進度條動畫（配合 CSS transition）
-            setTimeout(() => {
-                if (progressBar) progressBar.style.width = "100%";
-            }, 100);
-
-            // 3. 設定像影片一樣的專業醫學對接階段文字
-            const stages = [
-                { time: 0,    text: "正在連線至遠端 AI 模組..." },
-                { time: 800,  text: "檢索 ACSM 運動指引與心衰竭照護標準..." }, // 展示專業度
-                { time: 1600, text: "進行生理指標安全性硬過濾 (Hard Filter)..." },
-                { time: 2400, text: "根據 NYHA 分級與訓練目標生成運動計畫..." },
-                { time: 3200, text: "評估完成，準備呈現個人化課表..." }
-            ];
-
-            // 依序切換文字
-            stages.forEach(stage => {
-                setTimeout(() => {
-                    if (loadingText) {
-                        loadingText.innerText = stage.text;
-                        // 加上一個簡單的淡入效果
-                        loadingText.style.opacity = 0;
-                        setTimeout(() => { loadingText.style.opacity = 1; }, 50);
-                    }
-                }, stage.time);
-            });
-
-            // 4. 準備傳送至後端 API 的數據
-            const payload = { 
-                ...globalData, 
-                sysBP: document.getElementById('sysBP').value, 
-                diaBP: document.getElementById('diaBP').value, // 需確保 HTML 有此 ID
-                heartRate: document.getElementById('heartRate').value, // 需確保 HTML 有此 ID
-                todayWeight: document.getElementById('todayWeight').value, 
-                currentSymptom: document.getElementById('currentSymptom').value 
-            };
-
             try {
-                // 5. 正式發送請求至後端伺服器
-                const resp = await fetch(API_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
-                
+                const payload = {
+                    ...globalData,
+                    sysBP: document.getElementById('sysBP').value,
+                    diaBP: document.getElementById('diaBP').value,
+                    heartRate: document.getElementById('heartRate').value,
+                    todayWeight: document.getElementById('todayWeight').value,
+                    currentSymptom: document.getElementById('currentSymptom').value
+                };
+                const resp = await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 const res = await resp.json();
                 
-                // 6. 稍微延遲（例如 4 秒），讓使用者看完整個專業動畫過程
                 setTimeout(() => {
                     document.getElementById('section-loading').classList.add('hidden');
-                    if (resp.ok) renderResults(res);
-                    else showWarningUI(res.message || "生理數據安全性分析未通過，心臟負荷壓力過大，建議暫停訓練。");
-                }, 4000);
-
-            } catch (err) { 
-                console.error(err);
-                document.getElementById('section-loading').classList.add('hidden');
-                showWarningUI("系統連線異常，無法完成安全性評估，請確認後端伺服器已啟動並於網路穩定後重試。");
+                    if (resp.ok) {
+                        renderResults(res);
+                    } else {
+                        // 2. API 報錯時：顯示警告介面
+                        showWarningUI(res.message);
+                    }
+                }, 3000);
+            } catch (err) {
+                showWarningUI("網路連線異常，無法完成安全性評估，請稍後重試。");
             }
         }
 
-        // 輔助函式：切換至警告介面（照護模式）
+        // 別忘了新增這個輔助函式
         function showWarningUI(reason) {
-            document.getElementById('section-step-1').classList.add('hidden');
-            document.getElementById('section-step-2').classList.add('hidden');
-            document.getElementById('section-loading').classList.add('hidden');
-            document.getElementById('section-results').classList.add('hidden');
-            document.getElementById('section-report').classList.add('hidden');
-            document.getElementById('progress-container').classList.add('hidden');
-
-            const warningSection = document.getElementById('section-warning');
-            if (warningSection) warningSection.classList.remove('hidden');
-            const reasonEl = document.getElementById('warning-reason');
-            if (reasonEl) reasonEl.innerText = reason || "生理數據安全性分析未通過，建議暫停訓練並先休息觀察。";
-
-            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+            const sections = ['section-step-1', 'section-step-2', 'section-loading', 'section-results', 'progress-container'];
+            sections.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+            document.getElementById('section-warning').classList.remove('hidden');
+            document.getElementById('warning-reason').innerText = reason;
+            lucide.createIcons();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
