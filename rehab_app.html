@@ -76,10 +76,66 @@
             0%, 100% { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4); }
             50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.7), 0 0 20px rgba(59, 130, 246, 0.3); }
         }
+        /* 計畫容器優化 */
+        #weekly-plan-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        /* 單日計畫卡片基礎樣式 */
+        .plan-item-box {
+            transition: all 0.3s ease;
+            border-left: 4px solid #e5e7eb;
+        }
+        /* 運動日與今日任務強化 */
+        .plan-item-exercise {
+            border-left-color: #3b82f6;
+            background-color: #ffffff;
+        }
         .weekly-plan-today {
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+            border-left-color: #2563eb !important;
             animation: today-glow 2.5s ease-in-out infinite;
+            transform: scale(1.02);
+            z-index: 10;
         }
+        /* 計畫內文排版：讓組數與次數更顯眼 */
+        .plan-text-content {
+            line-height: 1.6;
+            font-size: 0.875rem;
+        }
+        .plan-text-content strong {
+            color: #1d4ed8;
+            background-color: #eff6ff;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+        /* 啟動遮罩：深邃科技感 */
+        .boot-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: radial-gradient(circle, #1a365d 0%, #020617 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .boot-overlay.active { opacity: 1; pointer-events: auto; }
+        /* 核心環：模擬 AI 運算旋轉 */
+        .loading-ring {
+            width: 100px; height: 100px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* 狀態文字：呼吸閃爍 */
+        .boot-text {
+            margin-top: 2rem;
+            color: #60a5fa;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            animation: pulse-text 1.5s infinite;
+        }
+        @keyframes pulse-text { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
         /* 成就慶祝全螢幕 */
         .celebration-overlay {
             position: fixed; inset: 0; z-index: 100;
@@ -402,13 +458,8 @@
                 <div class="grid md:grid-cols-2 gap-8">
                     <!-- 左：推薦清單與完整跟練按鈕 -->
                     <div class="space-y-4">
-                        <h3 class="font-bold flex items-center gap-2 px-1 text-gray-800"><i data-lucide="play-circle" class="text-red-500"></i> 今日推薦動作清單</h3>
+                        <h3 class="font-bold flex items-center gap-2 px-1 text-gray-800"><i data-lucide="play-circle" class="text-red-500"></i> 推薦動作</h3>
                         <div class="space-y-4" id="videoList"></div>
-                        
-                        <!-- 🔥 紫色大按鈕：開始今日完整課表 -->
-                        <button onclick="startPlaylist()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex justify-center items-center gap-2 mt-6">
-                            <i data-lucide="layers" class="w-5 h-5"></i> 🔥 開始今日完整課表
-                        </button>
                     </div>
                     
                     <!-- 右：週計畫 Timeline -->
@@ -422,6 +473,60 @@
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     進行明日生理監控並更新計畫
                 </button>
+            </div>
+
+            <!-- ================= 安全性警示介面 (替代彈出視窗) ================= -->
+            <div id="section-warning" class="hidden fade-in py-10 px-6">
+                <div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-red-100">
+                    <!-- 頂部警示標頭 -->
+                    <div class="bg-red-500 p-8 text-center text-white">
+                        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                            <i data-lucide="alert-octagon" class="w-12 h-12"></i>
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tight">目前不建議進行運動</h2>
+                    </div>
+                    
+                    <!-- 警示內容 -->
+                    <div class="p-8 space-y-6">
+                        <div class="space-y-2 text-center">
+                            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">異常指標偵測</p>
+                            <p id="warning-reason" class="text-red-600 font-bold text-lg leading-snug">
+                                系統偵測到您的生理數據超出安全範圍。
+                            </p>
+                        </div>
+            
+                        <!-- ACSM 臨床建議區 -->
+                        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                            <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                                <i data-lucide="stethoscope" class="w-4 h-4 text-blue-500"></i> 三總臨床照護建議：
+                            </h4>
+                            <ul class="text-sm text-slate-600 space-y-3 leading-relaxed">
+                                <li class="flex gap-2">
+                                    <span class="text-red-500 font-bold">•</span> 
+                                    <span>請保持坐姿或臥姿休息，觀察呼吸與心跳。</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <span class="text-red-500 font-bold">•</span> 
+                                    <span>測量並記錄目前血壓與體重，注意是否有下肢凹陷性水腫。</span>
+                                </li>
+                                <li class="flex gap-2 text-red-700 font-bold">
+                                    <span class="text-red-500 font-bold">•</span> 
+                                    <span>若感到劇烈胸悶、冷汗或暈厥，請立即聯絡個案管理師或就醫。</span>
+                                </li>
+                            </ul>
+                        </div>
+            
+                        <!-- 行動按鈕 -->
+                        <div class="space-y-3 pt-2">
+                            <button type="button" onclick="window.location.reload()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition shadow-lg flex justify-center items-center gap-2">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新輸入數據
+                            </button>
+                            <a href="tel:021234567" class="w-full bg-white border-2 border-red-500 text-red-500 py-4 rounded-2xl font-bold hover:bg-red-50 transition flex justify-center items-center gap-2">
+                                <i data-lucide="phone" class="w-4 h-4"></i> 聯繫復健中心
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="section-report" class="hidden fade-in pb-10 space-y-6">
@@ -477,8 +582,7 @@
                             <canvas id="historyTrendChart"></canvas>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 gap-3" id="historyLogList">
-                        </div>
+                    <div class="grid grid-cols-1 gap-3" id="historyLogList"></div>
                 </div>
             </div>
 
@@ -487,10 +591,17 @@
 
     <script>
         const API_URL = "http://127.0.0.1:5000/api/analyze";
+        const SESSION_STATS_URL = "http://127.0.0.1:5000/session_stats";
         lucide.createIcons();
         document.getElementById('current-date').innerText = new Date().toISOString().split('T')[0];
         let globalData = {};
         let currentVideos = [];
+        let dailyTasks = [];
+        let currentTaskIndex = 0;
+        let startRepsForCurrentTask = 0;
+        let repPollInterval = null;
+        let restTimerInterval = null;
+        let isDailySession = false;
 
         function goToStep2(e) {
             e.preventDefault();
@@ -547,8 +658,9 @@
 
             const todayW = parseFloat(document.getElementById('todayWeight').value) || 0;
             const baseW = parseFloat(globalData.baseWeight) || 0;
+            // 1. 本地硬過濾：體重增加異常
             if (baseW > 0 && (todayW - baseW) > 2) {
-                alert("今日體重增加異常（較基礎體重增加超過 2 公斤），可能出現水腫，不建議運動，請聯繫醫護人員。");
+                showWarningUI("今日體重較基礎體重增加超過 2 公斤，可能出現明顯水腫。根據 ACSM 指引，此狀態下運動風險極高。");
                 return;
             }
 
@@ -607,19 +719,34 @@
                 
                 // 6. 稍微延遲（例如 4 秒），讓使用者看完整個專業動畫過程
                 setTimeout(() => {
-                    if (resp.ok) {
-                        renderResults(res);
-                    } else {
-                        alert("安全性分析未通過：" + res.message);
-                        location.reload();
-                    }
+                    document.getElementById('section-loading').classList.add('hidden');
+                    if (resp.ok) renderResults(res);
+                    else showWarningUI(res.message || "生理數據安全性分析未通過，心臟負荷壓力過大，建議暫停訓練。");
                 }, 4000);
 
             } catch (err) { 
                 console.error(err);
-                alert("無法連線至後端 AI 伺服器，請確認 api_server.py 是否已啟動"); 
-                location.reload(); 
+                document.getElementById('section-loading').classList.add('hidden');
+                showWarningUI("系統連線異常，無法完成安全性評估，請確認後端伺服器已啟動並於網路穩定後重試。");
             }
+        }
+
+        // 輔助函式：切換至警告介面（照護模式）
+        function showWarningUI(reason) {
+            document.getElementById('section-step-1').classList.add('hidden');
+            document.getElementById('section-step-2').classList.add('hidden');
+            document.getElementById('section-loading').classList.add('hidden');
+            document.getElementById('section-results').classList.add('hidden');
+            document.getElementById('section-report').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+
+            const warningSection = document.getElementById('section-warning');
+            if (warningSection) warningSection.classList.remove('hidden');
+            const reasonEl = document.getElementById('warning-reason');
+            if (reasonEl) reasonEl.innerText = reason || "生理數據安全性分析未通過，建議暫停訓練並先休息觀察。";
+
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // ==========================================
@@ -637,6 +764,14 @@
             const rpeText = data.rpe_text || "";
 
             currentVideos = videos;
+            // 今日任務：優先使用 daily_tasks[0]（file/reps/name），否則 today_tasks 或推薦影片
+            if (Array.isArray(data.daily_tasks) && data.daily_tasks[0] && data.daily_tasks[0].length > 0) {
+                dailyTasks = data.daily_tasks[0].map(t => ({ filename: t.file, target: t.reps || 8, rest: t.rest ?? 60, name: t.name || '' }));
+            } else if (Array.isArray(data.today_tasks) && data.today_tasks.length > 0) {
+                dailyTasks = data.today_tasks.map(t => ({ filename: t.filename, target: t.target || 8, rest: t.rest ?? 60 }));
+            } else {
+                dailyTasks = (videos || []).map(v => ({ filename: v.filename, target: 8, rest: 60 }));
+            }
 
             // 1. 目標徽章
             const goalMap = { 'strength': '增強肌力', 'cardio': '心肺耐力', 'mobility': '活動度', 'pain': '減緩疼痛' };
@@ -705,40 +840,43 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="startStream(['${v.filename}'])" class="w-full mt-3 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white py-2.5 rounded-xl font-bold text-xs flex justify-center items-center gap-2">
-                        <i data-lucide="video" class="w-4 h-4"></i> 單曲跟練
-                    </button>
                 </div>
             `;
             }).join('');
             lucide.createIcons();
         }
 
-        // 渲染一週時間軸：第一天＝今日日期，其餘依序推算
+        // 渲染一週規劃：每日詳細菜單，今日卡片動態顯示「開始今日任務」按鈕
         function renderWeeklyPlanUI(plan) {
             const container = document.getElementById('weekly-plan-grid');
             if (!container) return;
+
             const list = Array.isArray(plan) ? plan : [];
             const now = new Date();
+
             container.innerHTML = list.map((p, i) => {
-                const futureDate = new Date(now);
-                futureDate.setDate(now.getDate() + i);
-                const dateStr = `${futureDate.getMonth() + 1}/${futureDate.getDate()}`;
                 const isToday = i === 0;
+                const isRest = p.includes("休息");
+
                 return `
-            <div class="flex gap-4 pb-6 relative">
-                <div class="w-10 flex flex-col items-center">
-                    <span class="text-[9px] font-black ${isToday ? 'text-blue-600' : 'text-gray-400'} mb-1">${dateStr}</span>
+            <div class="flex gap-4 pb-4 relative">
+                <div class="w-10 flex flex-col items-center shrink-0">
                     <div class="w-8 h-8 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'} flex items-center justify-center text-xs font-bold z-10 border-2">
                         ${i + 1}
                     </div>
                 </div>
-                <div class="flex-1 p-3 rounded-2xl border ${isToday ? 'border-blue-300 weekly-plan-today' : 'bg-gray-50/80 border-gray-100'}">
-                    <p class="text-sm font-medium ${isToday ? 'text-gray-800 font-bold' : 'text-gray-600'}">${p}</p>
+                <div class="flex-1 p-4 rounded-2xl border ${isToday ? 'weekly-plan-today border-blue-300' : (isRest ? 'bg-gray-50 border-gray-100' : 'plan-item-exercise border-gray-200')}">
+                    <p class="text-sm ${isToday ? 'font-bold text-gray-800' : 'text-gray-500'} mb-3">${p}</p>
+                    ${isToday && !isRest ? `
+                        <button type="button" onclick="startDailyPlaylist()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95">
+                            <i data-lucide="play" class="w-4 h-4"></i> 開始今日任務
+                        </button>
+                    ` : ''}
                 </div>
             </div>`;
             }).join('');
-            lucide.createIcons();
+
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
         }
 
         // ==========================================
@@ -780,9 +918,143 @@
             });
         }
 
-        function startPlaylist() {
-            const paths = currentVideos.map(v => v.filename);
-            if (paths.length > 0) startStream(paths);
+        /** 從週計畫「今日」卡片進入：依今日任務清單逐動作執行，達目標次數後自動組間休息 */
+        function startDailyPlaylist() {
+            if (!dailyTasks || dailyTasks.length === 0) {
+                dailyTasks = (currentVideos || []).map(v => ({ filename: v.filename, target: 8, rest: 60 }));
+            }
+            if (dailyTasks.length === 0) return;
+
+            const overlay = document.getElementById('boot-overlay');
+            const statusText = document.getElementById('boot-status');
+            overlay.classList.add('active');
+
+            const phases = [
+                { t: 0, text: "正在載入今日專屬動作..." },
+                { t: 800, text: "啟動即時體感監測引擎..." },
+                { t: 1600, text: "同步臨床安全保護邏輯..." },
+                { t: 2400, text: "請調整呼吸，準備開始。" }
+            ];
+            phases.forEach(p => {
+                setTimeout(() => {
+                    statusText.innerText = p.text;
+                    statusText.style.animation = 'none';
+                    statusText.offsetHeight;
+                    statusText.style.animation = 'pulse-text 1.5s infinite';
+                }, p.t);
+            });
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                isDailySession = true;
+                currentTaskIndex = 0;
+                startRepsForCurrentTask = 0;
+                startStream([dailyTasks[0].filename]);
+                startRepPolling();
+            }, 3200);
+        }
+
+        function startRepPolling() {
+            if (repPollInterval) clearInterval(repPollInterval);
+            repPollInterval = setInterval(async () => {
+                if (!isDailySession || currentTaskIndex >= dailyTasks.length) return;
+                try {
+                    const res = await fetch(SESSION_STATS_URL);
+                    if (!res.ok) return;
+                    const stats = await res.json();
+                    const valid = stats.valid_reps ?? stats.valid ?? 0;
+                    const currentReps = valid - startRepsForCurrentTask;
+                    const task = dailyTasks[currentTaskIndex];
+                    if (currentReps >= task.target) {
+                        clearInterval(repPollInterval);
+                        repPollInterval = null;
+                        if (currentTaskIndex < dailyTasks.length - 1) {
+                            triggerRestPeriod(task.rest);
+                        } else {
+                            finishDailySession();
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+            }, 1000);
+        }
+
+        function triggerRestPeriod(restTime) {
+            const imgEl = document.getElementById('ai-stream-view');
+            imgEl.src = "";
+            const nextTask = currentTaskIndex + 1 < dailyTasks.length ? dailyTasks[currentTaskIndex + 1] : null;
+            const nextLabel = nextTask ? (nextTask.name || currentVideos.find(v => v.filename === nextTask.filename)?.title || nextTask.filename) : "";
+            showRestOverlay(restTime, nextLabel, () => {
+                currentTaskIndex++;
+                const restEl = document.getElementById('rest-overlay');
+                if (restEl) restEl.classList.add('hidden');
+                if (currentTaskIndex < dailyTasks.length) {
+                    startNextTask();
+                } else {
+                    finishDailySession();
+                }
+            });
+        }
+
+        function showRestOverlay(seconds, nextTaskName, onComplete) {
+            const overlay = document.getElementById('rest-overlay');
+            const timerEl = document.getElementById('rest-timer');
+            const nextText = document.getElementById('next-task-name');
+            const progressCircle = document.getElementById('rest-progress');
+            if (!overlay || !timerEl) return;
+            if (restTimerInterval) clearInterval(restTimerInterval);
+            overlay.classList.remove('hidden');
+            if (nextText) nextText.innerText = nextTaskName ? `下一項：${nextTaskName}` : "下一項：—";
+            let timeLeft = seconds;
+            const total = 377;
+            const updateProgress = () => {
+                timerEl.textContent = timeLeft;
+                if (progressCircle) progressCircle.style.strokeDashoffset = total * (1 - timeLeft / seconds);
+            };
+            updateProgress();
+            restTimerInterval = setInterval(() => {
+                timeLeft--;
+                updateProgress();
+                if (timeLeft <= 0) {
+                    clearInterval(restTimerInterval);
+                    restTimerInterval = null;
+                    onComplete();
+                }
+            }, 1000);
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+
+        function stopDailyPlaylist() {
+            if (restTimerInterval) { clearInterval(restTimerInterval); restTimerInterval = null; }
+            if (repPollInterval) { clearInterval(repPollInterval); repPollInterval = null; }
+            isDailySession = false;
+            const restEl = document.getElementById('rest-overlay');
+            if (restEl) restEl.classList.add('hidden');
+            document.getElementById('ai-stream-view').src = "";
+            document.getElementById('section-streaming').classList.add('hidden');
+            document.getElementById('section-results').classList.remove('hidden');
+            document.getElementById('section-report').classList.add('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+
+        function startNextTask() {
+            (async () => {
+                try {
+                    const res = await fetch(SESSION_STATS_URL);
+                    if (res.ok) {
+                        const stats = await res.json();
+                        startRepsForCurrentTask = stats.valid_reps ?? stats.valid ?? 0;
+                    }
+                } catch (e) { /* ignore */ }
+                startStream([dailyTasks[currentTaskIndex].filename]);
+                startRepPolling();
+            })();
+        }
+
+        function finishDailySession() {
+            if (repPollInterval) { clearInterval(repPollInterval); repPollInterval = null; }
+            isDailySession = false;
+            stopStreaming();
         }
 
         function startStream(paths) {
@@ -809,16 +1081,16 @@
         let trainingHistory = JSON.parse(localStorage.getItem('hf_rehab_history') || '[]');
 
         function initDashboard() {
-        const now = new Date();
-        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-        
-        // 1. 日期顯示
-        const dateEl = document.getElementById('current-date-text');
-        if (dateEl) dateEl.innerText = now.toLocaleDateString('zh-TW', dateOptions);
+            const now = new Date();
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
 
-        // 2. 連續天數計算 (維持復健動力)
-        calculateStreak();
-    }
+            // 1. 日期顯示
+            const dateEl = document.getElementById('current-date-text');
+            if (dateEl) dateEl.innerText = now.toLocaleDateString('zh-TW', dateOptions);
+
+            // 2. 連續天數計算 (維持復健動力)
+            calculateStreak();
+        }
 
         function calculateStreak() {
             const el = document.getElementById('streak-text');
@@ -867,6 +1139,11 @@
         }
 
         function stopStreaming() {
+            if (repPollInterval) { clearInterval(repPollInterval); repPollInterval = null; }
+            if (restTimerInterval) { clearInterval(restTimerInterval); restTimerInterval = null; }
+            isDailySession = false;
+            const restEl = document.getElementById('rest-overlay');
+            if (restEl) restEl.classList.add('hidden');
             document.getElementById('section-streaming').classList.add('hidden');
             document.getElementById('ai-stream-view').src = "";
 
@@ -981,36 +1258,58 @@
             `).join('');
         }
         function initHistoryChart() {
-        const canvas = document.getElementById('historyTrendChart');
-        if (!canvas || trainingHistory.length === 0) return;
+            const canvas = document.getElementById('historyTrendChart');
+            if (!canvas || trainingHistory.length === 0) return;
 
-        const ctx = canvas.getContext('2d');
-        const labels = trainingHistory.slice(0, 7).reverse().map(h => h.date);
-        const data = trainingHistory.slice(0, 7).reverse().map(h => h.valid);
+            const ctx = canvas.getContext('2d');
+            const labels = trainingHistory.slice(0, 7).reverse().map(h => h.date);
+            const data = trainingHistory.slice(0, 7).reverse().map(h => h.valid);
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '標準達標次數',
-                    data: data,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
-            }
-        });
-    }
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '標準達標次數',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+                }
+            });
+        }
 
     initDashboard();
     </script>
+    <div id="boot-overlay" class="boot-overlay">
+        <div class="loading-ring"></div>
+        <div class="boot-text" id="boot-status">準備進入復健模式...</div>
+        <div class="text-white/20 text-[10px] mt-6 tracking-widest">系統已串接 ACSM 運動指引</div>
+    </div>
+    <div id="rest-overlay" class="hidden fixed inset-0 bg-slate-900/95 z-[100] flex flex-col items-center justify-center p-4">
+        <div class="relative w-32 h-32 flex items-center justify-center mb-8">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
+                <circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="4" fill="transparent" class="text-blue-900/30"/>
+                <circle id="rest-progress" cx="64" cy="64" r="60" stroke="currentColor" stroke-width="4" fill="transparent" stroke-dasharray="377" stroke-dashoffset="0" class="text-blue-500 transition-all duration-1000"/>
+            </svg>
+            <span id="rest-timer" class="absolute text-4xl font-black text-white">60</span>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">本組完成，稍作休息</h2>
+        <p id="next-task-name" class="text-blue-400 font-medium mb-8">下一項動作載入中...</p>
+        <div class="bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl max-w-sm text-center">
+            <p class="text-gray-300 text-sm leading-relaxed">
+                ACSM 提醒：休息是為了讓心率回穩。請保持深長呼吸，觀察是否有胸悶現象。
+            </p>
+        </div>
+        <button type="button" onclick="stopDailyPlaylist()" class="mt-10 text-gray-500 hover:text-red-400 text-sm font-medium underline">停止今日任務</button>
+    </div>
 </body>
 </html>
