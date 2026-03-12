@@ -1,7 +1,7 @@
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 # 建議安裝 pip install langchain-chroma
 try:
     from langchain_chroma import Chroma
@@ -15,19 +15,11 @@ PROJECT_ROOT = os.path.dirname(BASE_DIR)
 load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
 def build_acsm_vector_db():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("❌ 錯誤：找不到 OPENAI_API_KEY。")
-        return
-
     # 請確認您的 PDF 檔名與路徑
     pdf_path = os.path.join(BASE_DIR, "data", "ACSM心臟衰竭病患運動指引處方.pdf")
     
     if not os.path.exists(pdf_path):
-        print(f"❌ 找不到檔案：{pdf_path}")
         return
-
-    print("--- 1. 開始讀取 ACSM PDF 內容 ---")
     loader = PyPDFLoader(pdf_path)
     pages = loader.load()
 
@@ -50,9 +42,15 @@ def build_acsm_vector_db():
             doc.metadata["category"] = "General"
 
     # 5. 執行向量化並儲存
-    print("--- 2. 正在轉換並儲存向量資料庫 ---")
     try:
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        model_name = "intfloat/multilingual-e5-small"
+        model_kwargs = {"device": "cuda"}
+        encode_kwargs = {"normalize_embeddings": True}
+        embeddings = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+        )
         persist_dir = os.path.join(BASE_DIR, "vector_db")
         
         vector_db = Chroma.from_documents(
@@ -61,9 +59,8 @@ def build_acsm_vector_db():
             persist_directory=persist_dir,
             collection_name="acsm_hf_guidelines"
         )
-        print(f"✅ 成功！總共處理片段數: {len(docs)}")
     except Exception as e:
-        print(f"❌ 錯誤: {e}")
+        return
 
 if __name__ == "__main__":
     build_acsm_vector_db()

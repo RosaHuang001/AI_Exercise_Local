@@ -30,6 +30,10 @@ uvicorn[standard]>=0.30.0
 pyjwt>=2.8.0
 python-multipart>=0.0.9
 
+# === RAG Local Embeddings (GPU forced) ===
+langchain-huggingface>=0.1.0
+sentence-transformers>=3.0.0
+
 # === 瀏覽器即時影像（跟練用自己攝影機）===
 streamlit-webrtc>=0.64.0
 av>=10.0.0

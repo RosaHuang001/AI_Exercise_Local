@@ -1,21 +1,23 @@
 import os
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 try:
     from langchain_chroma import Chroma
 except ImportError:
     from langchain_community.vectorstores import Chroma
-from dotenv import load_dotenv
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 class ACSMRagEngine:
     def __init__(self):
-        if not os.getenv("OPENAI_API_KEY"):
-            print("❌ 警告：找不到 OPENAI_API_KEY")
-
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        model_name = "intfloat/multilingual-e5-small"
+        model_kwargs = {"device": "cuda"}
+        encode_kwargs = {"normalize_embeddings": True}
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+        )
         persist_dir = os.path.join(CURRENT_DIR, "vector_db")
         
         self.vector_db = Chroma(
@@ -41,5 +43,4 @@ class ACSMRagEngine:
                 })
             return formatted_rules
         except Exception as e:
-            print(f"❌ 檢索錯誤: {e}")
             return []

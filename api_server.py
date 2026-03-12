@@ -10,8 +10,12 @@ import webbrowser
 from threading import Timer
 
 import cv2
+import torch
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+
+# 強制將全域預設裝置設為 CUDA（不做檢查；環境未配置會直接報錯中斷）
+torch.set_default_device('cuda')
 
 from rag_module.user_condition_mapper import build_user_context
 from stream_engine import generate_frames, get_last_session_stats

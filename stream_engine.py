@@ -11,6 +11,10 @@ from ultralytics import YOLO
 from scipy.signal import find_peaks
 from PIL import Image, ImageDraw, ImageFont
 
+# --- GPU 強制設定（絕對靜默、硬鎖 CUDA） ---
+device = 'cuda'
+model = YOLO("yolov8n-pose.pt").to(device)
+
 # =========================
 # 路徑與設定
 # =========================
@@ -20,7 +24,6 @@ _PROJECT_ROOT = _SCRIPT_DIR if os.path.isdir(os.path.join(_SCRIPT_DIR, "exercise
 FONT_PATH = os.path.join(_SCRIPT_DIR, "front", "Noto_Sans_TC", "static", "NotoSansTC-Regular.ttf")
 _font_cache = {}
 
-MODEL_PATH = os.path.join(_SCRIPT_DIR, "yolo11n-pose.pt")
 DISPLAY_W, DISPLAY_H = 1280, 720
 INNER_HEIGHT = 480
 HALF_W = DISPLAY_W // 2  # 1:1 畫面分配，左右各 640px
@@ -83,11 +86,11 @@ def _yolo_worker(model, in_queue, result_holder, lock, stop_event):
             break
         small = cv2.resize(frame, (YOLO_INPUT_W, YOLO_INPUT_H))
         try:
-            # device=0 強制使用第一張 GPU（避免 ultralytics 自行退回 CPU）
-            res = model(small, verbose=False, imgsz=YOLO_IMGSZ, device=0)
-            angle = extract_right_knee_angle_from_results(res[0])
+            results = model.predict(small, device=device, verbose=False, stream=True, imgsz=YOLO_IMGSZ)
+            result0 = next(results)
+            angle = extract_right_knee_angle_from_results(result0)
             with lock:
-                result_holder["result0"] = res[0]
+                result_holder["result0"] = result0
                 result_holder["angle"] = angle
         except Exception:
             pass
@@ -254,10 +257,6 @@ def generate_frames(playlist, nyha_level="class_ii"):
     except Exception:
         exercise_list = []
 
-    # 初始化 YOLO 模型：強制使用 GPU（cuda）。若環境未安裝 CUDA，會直接在此處爆掉（不允許偷跑 CPU）。
-    model = YOLO(MODEL_PATH)
-    model.to("cuda")
-    print("[stream_engine] YOLO device (forced):", model.device)
     # 背景 YOLO 用：queue + 結果暫存
     yolo_queue = Queue(maxsize=1) if USE_YOLO_THREAD else None
     yolo_result = {} if USE_YOLO_THREAD else None
@@ -294,7 +293,6 @@ def generate_frames(playlist, nyha_level="class_ii"):
     cap_ref = cv2.VideoCapture(ref_path)
     if not cap_ref.isOpened():
         # 示範影片開不起來時不進入主迴圈，否則會立刻被當成「影片結束」而跳出「我已訓練完畢」
-        print(f"[stream_engine] 無法開啟示範影片: {ref_path}")
         _update_session_stats(0, 0, ended=True)
         err_canvas = np.full((DISPLAY_H, DISPLAY_W, 3), (25, 25, 25), dtype=np.uint8)
         put_chinese_text(err_canvas, "示範影片無法載入", (DISPLAY_W//2 - 120, DISPLAY_H//2 - 40), 28, (255, 255, 255))
@@ -339,9 +337,9 @@ def generate_frames(playlist, nyha_level="class_ii"):
                     user_angle = yolo_result.get("angle")
                 if result0 is None:
                     small_frame = cv2.resize(frame_user, (YOLO_INPUT_W, YOLO_INPUT_H))
-                    user_results = model(small_frame, verbose=False, imgsz=YOLO_IMGSZ)
-                    user_angle = extract_right_knee_angle_from_results(user_results[0])
-                    result0 = user_results[0]
+                    results = model.predict(small_frame, device=device, verbose=False, stream=True, imgsz=YOLO_IMGSZ)
+                    result0 = next(results)
+                    user_angle = extract_right_knee_angle_from_results(result0)
                     with yolo_lock:
                         yolo_result["result0"] = result0
                         yolo_result["angle"] = user_angle
@@ -350,8 +348,8 @@ def generate_frames(playlist, nyha_level="class_ii"):
                 frame_counter += 1
                 if frame_counter % YOLO_SKIP_FRAMES == 0 or cached_result0 is None:
                     small_frame = cv2.resize(frame_user, (YOLO_INPUT_W, YOLO_INPUT_H))
-                    user_results = model(small_frame, verbose=False, imgsz=YOLO_IMGSZ)
-                    cached_result0 = user_results[0]
+                    results = model.predict(small_frame, device=device, verbose=False, stream=True, imgsz=YOLO_IMGSZ)
+                    cached_result0 = next(results)
                     cached_angle = extract_right_knee_angle_from_results(cached_result0)
                 user_results = [cached_result0] if cached_result0 is not None else []
                 user_angle = cached_angle
